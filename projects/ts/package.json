@@ -1,0 +1,25 @@
+{
+  "name": "stater-fsm-code-ts",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "test": "npx tsx tests/TestDoor.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "compilerOptions": {
+    "target": "es2016",
+    "module": "esnext",
+    "lib": [
+      "dom",
+      "es2018"
+    ]
+  },
+  "type": "module",
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}
