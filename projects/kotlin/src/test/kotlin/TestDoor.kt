@@ -1,18 +1,7 @@
 import org.example.*
-
-fun main() {
-    val tester = TestDoor()
-
-    tester.testSimpleBuild()
-    tester.testBuilder()
-    tester.testBuilder2()
-    tester.testAutoTransition()
-    tester.testBuilderFactory()
-    tester.testJsonSchema()
-    tester.testStringGeneric()
-    tester.testJsonDump()
-    tester.testMiddlewareAndCallbacks()
-}
+import org.junit.jupiter.api.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 
 class TestDoor {
@@ -86,70 +75,65 @@ class TestDoor {
         )
     }
 
-    private fun assert(value: Boolean) {
-        if (!value) {
-            error("")
-        }
-    }
-
     private fun testDoor(door: StaterStateMachine<States, DoorFSMContext>) {
-        assert(door.getState() == States.OPEN)
-        assert(door.getContext().degreeOfOpening == 100)
+        assertEquals(door.getState(), States.OPEN)
+        assertEquals(door.getContext().degreeOfOpening, 100)
         door.transition("preClose")
-        assert(door.getState() == States.AJAR)
-        assert(door.getContext().degreeOfOpening == 99)
+        assertEquals(door.getState(), States.AJAR)
+        assertEquals(door.getContext().degreeOfOpening, 99)
         while (door.getContext().degreeOfOpening > 1) {
             door.transition("ajarMinus")
-            assert(door.getState() == States.AJAR)
+            assertEquals(door.getState(), States.AJAR)
         }
-        assert(door.getContext().degreeOfOpening == 1)
+        assertEquals(door.getContext().degreeOfOpening, 1)
         door.transition("close")
-        assert(door.getContext().degreeOfOpening == 0)
-        assert(door.getState() == States.CLOSE)
+        assertEquals(door.getContext().degreeOfOpening, 0)
+        assertEquals(door.getState(), States.CLOSE)
         door.transition("preOpen")
-        assert(door.getContext().degreeOfOpening == 1)
-        assert(door.getState() == States.AJAR)
+        assertEquals(door.getContext().degreeOfOpening, 1)
+        assertEquals(door.getState(), States.AJAR)
         door.transition("ajarPlus")
-        assert(door.getState() == States.AJAR)
-        assert(door.getContext().degreeOfOpening == 2)
+        assertEquals(door.getState(), States.AJAR)
+        assertEquals(door.getContext().degreeOfOpening, 2)
         while (door.getContext().degreeOfOpening < 99) {
             door.transition("ajarPlus")
-            assert(door.getState() == States.AJAR)
+            assertEquals(door.getState(), States.AJAR)
         }
         door.transition("open")
-        assert(door.getState() == States.OPEN)
-        assert(door.getContext().degreeOfOpening == 100)
+        assertEquals(door.getState(), States.OPEN)
+        assertEquals(door.getContext().degreeOfOpening, 100)
     }
 
     private fun typedTestDoor(door: TypesDoorStateMachine) {
-        assert(door.getState() == States.OPEN)
-        assert(door.getContext().degreeOfOpening == 100)
+        assertEquals(door.getState(), States.OPEN)
+        assertEquals(door.getContext().degreeOfOpening, 100)
         door.preClose()
-        assert(door.getState() == States.AJAR)
-        assert(door.getContext().degreeOfOpening == 99)
+        assertEquals(door.getState(), States.AJAR)
+        assertEquals(door.getContext().degreeOfOpening, 99)
         while (door.getContext().degreeOfOpening > 1) {
             door.ajarMinus()
-            assert(door.getState() == States.AJAR)
+            assertEquals(door.getState(), States.AJAR)
         }
-        assert(door.getContext().degreeOfOpening == 1)
+        assertEquals(door.getContext().degreeOfOpening, 1)
         door.close()
-        assert(door.getContext().degreeOfOpening == 0)
-        assert(door.getState() == States.CLOSE)
+        assertEquals(door.getContext().degreeOfOpening, 0)
+        assertEquals(door.getState(), States.CLOSE)
         door.preOpen()
-        assert(door.getContext().degreeOfOpening == 1)
-        assert(door.getState() == States.AJAR)
+        assertEquals(door.getContext().degreeOfOpening, 1)
+        assertEquals(door.getState(), States.AJAR)
         door.ajarPlus()
-        assert(door.getState() == States.AJAR)
-        assert(door.getContext().degreeOfOpening == 2)
+        assertEquals(door.getState(), States.AJAR)
+        assertEquals(door.getContext().degreeOfOpening, 2)
         while (door.getContext().degreeOfOpening < 99) {
             door.ajarPlus()
-            assert(door.getState() == States.AJAR)
+            assertEquals(door.getState(), States.AJAR)
         }
         door.open()
-        assert(door.getState() == States.OPEN)
-        assert(door.getContext().degreeOfOpening == 100)
+        assertEquals(door.getState(), States.OPEN)
+        assertEquals(door.getContext().degreeOfOpening, 100)
     }
 
+    @Test
     fun testSimpleBuild() {
         val doorFSM = TypesDoorStateMachine(
             startState = States.OPEN,
@@ -190,6 +174,7 @@ class TestDoor {
         typedTestDoor(doorFSM)
     }
 
+    @Test
     fun testBuilder() {
         val doorFSM = StaterStateMachineBuilder<States, DoorFSMContext>()
             .addTransition("preOpen", States.CLOSE, States.AJAR, event = { it.degreeOfOpening = 1 })
@@ -236,6 +221,7 @@ class TestDoor {
             .setTransitionCondition("ajarMinus") { it.degreeOfOpening in 2..99 }
             .setTransitionEvent("ajarMinus") { it.degreeOfOpening-- }
 
+    @Test
     fun testBuilder2() {
         val doorFSM = eventsBuild(structureBuild())
             .setContext(DoorFSMContext())
@@ -245,6 +231,7 @@ class TestDoor {
         testDoor(doorFSM)
     }
 
+    @Test
     fun testAutoTransition() {
         val doorFSM = eventsBuild(structureBuild())
             .setContext(DoorFSMContext())
@@ -252,9 +239,10 @@ class TestDoor {
             .build()
 
         doorFSM.autoTransition()
-        assert(doorFSM.getState() == States.AJAR)
+        assertEquals(doorFSM.getState(), States.AJAR)
     }
 
+    @Test
     fun testBuilderFactory() {
         val doorFSM = eventsBuild(structureBuild())
             .setContext(DoorFSMContext())
@@ -264,10 +252,11 @@ class TestDoor {
 
 
         testDoor(doorFSM)
-        assert(doorFSM is TypesDoorStateMachine)
+        assertTrue { doorFSM is TypesDoorStateMachine }
         if (doorFSM is TypesDoorStateMachine) typedTestDoor(doorFSM)
     }
 
+    @Test
     fun testJsonSchema() {
         val validDoorFSM = eventsBuild(structureBuild())
             .setContext(DoorFSMContext())
@@ -283,14 +272,15 @@ class TestDoor {
             .setContext(DoorFSMContext())
             .setFactory(typedDoorFactory)
             .build()
-        assert(jsonSchema == doorFSM.toJsonSchema())
+        assertEquals(jsonSchema, doorFSM.toJsonSchema())
 
         testDoor(doorFSM)
 
-        assert(doorFSM is TypesDoorStateMachine)
+        assertTrue { doorFSM is TypesDoorStateMachine }
         if (doorFSM is TypesDoorStateMachine) typedTestDoor(doorFSM)
     }
 
+    @Test
     fun testStringGeneric() {
         val validDoorFSM = eventsBuild(structureBuild())
             .setContext(DoorFSMContext())
@@ -302,9 +292,10 @@ class TestDoor {
             .fromJsonSchema(jsonSchema) { it }
             .setContext(DoorFSMContext())
             .build()
-        assert(stringDoorFSM.getState() == "OPEN")
+        assertEquals(stringDoorFSM.getState(), "OPEN")
     }
 
+    @Test
     fun testJsonDump() {
         class JsonConverter : ContextJsonAdapter<DoorFSMContext> {
             override fun toJson(context: DoorFSMContext) = context.degreeOfOpening.toString()
@@ -316,17 +307,18 @@ class TestDoor {
             .setStartState(States.OPEN)
             .setContextJsonAdapter(JsonConverter())
             .build()
-        assert(validDoorFSM.getState() == States.OPEN)
-        assert(validDoorFSM.getContext().degreeOfOpening == 100)
+        assertEquals(validDoorFSM.getState(), States.OPEN)
+        assertEquals(validDoorFSM.getContext().degreeOfOpening, 100)
         val dump = validDoorFSM.toJson()
         validDoorFSM.transition("preClose")
-        assert(validDoorFSM.getState() == States.AJAR)
-        assert(validDoorFSM.getContext().degreeOfOpening == 99)
+        assertEquals(validDoorFSM.getState(), States.AJAR)
+        assertEquals(validDoorFSM.getContext().degreeOfOpening, 99)
         validDoorFSM.fromJson(dump) { States.valueOf(it) }
-        assert(validDoorFSM.getState() == States.OPEN)
-        assert(validDoorFSM.getContext().degreeOfOpening == 100)
+        assertEquals(validDoorFSM.getState(), States.OPEN)
+        assertEquals(validDoorFSM.getContext().degreeOfOpening, 100)
     }
 
+    @Test
     fun testMiddlewareAndCallbacks() {
         var transitionMiddleware = 0
         var transitionAllMiddleware = 0
@@ -346,11 +338,11 @@ class TestDoor {
             .subscribeOnAllState { _, _ -> subscribeOnAllState++ }
             .build()
         testDoor(validDoorFSM)
-        assert(transitionMiddleware == 1)
-        assert(transitionAllMiddleware == 200)
-        assert(subscribeOnTransition == 1)
-        assert(subscribeOnAllTransition == 200)
-        assert(subscribeOnState == 198)
-        assert(subscribeOnAllState == 200)
+        assertEquals(transitionMiddleware, 1)
+        assertEquals(transitionAllMiddleware, 200)
+        assertEquals(subscribeOnTransition, 1)
+        assertEquals(subscribeOnAllTransition, 200)
+        assertEquals(subscribeOnState, 198)
+        assertEquals(subscribeOnAllState, 200)
     }
 }
