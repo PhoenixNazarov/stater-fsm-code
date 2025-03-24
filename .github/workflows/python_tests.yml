@@ -35,10 +35,10 @@ jobs:
 
       - name: Install pytest and pytest-cov
         run: |
-          cd my-folder
+          cd projects/python
           poetry add --dev pytest pytest-cov
 
       - name: Run tests with pytest
         run: |
-          cd my-folder  # Переход в папку с проектом
+          cd projects/python
           poetry run pytest --disable-warnings -q --cov=my_folder --cov-report=term-missing
