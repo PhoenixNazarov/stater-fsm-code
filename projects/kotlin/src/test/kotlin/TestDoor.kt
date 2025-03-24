@@ -15,10 +15,39 @@ class TestDoor {
 
 
     class TypesDoorStateMachine(
-        transitions: List<Transition<States, DoorFSMContext>>,
-        startState: States,
-        states: List<States>,
-        context: DoorFSMContext,
+        transitions: List<Transition<States, DoorFSMContext>> = listOf(
+            Transition(name = "preOpen",
+                start = States.CLOSE,
+                end = States.AJAR,
+                event = { it.degreeOfOpening = 1 }),
+            Transition(name = "preClose",
+                start = States.OPEN,
+                end = States.AJAR,
+                event = { it.degreeOfOpening = 99 }),
+            Transition(name = "open",
+                start = States.AJAR,
+                end = States.OPEN,
+                condition = { it.degreeOfOpening >= 99 },
+                event = { it.degreeOfOpening = 100 }),
+            Transition(name = "close",
+                start = States.AJAR,
+                end = States.CLOSE,
+                condition = { it.degreeOfOpening <= 1 },
+                event = { it.degreeOfOpening = 0 }),
+            Transition(name = "ajarPlus",
+                start = States.AJAR,
+                end = States.AJAR,
+                condition = { it.degreeOfOpening in 1..98 },
+                event = { it.degreeOfOpening++ }),
+            Transition(name = "ajarMinus",
+                start = States.AJAR,
+                end = States.AJAR,
+                condition = { it.degreeOfOpening in 2..99 },
+                event = { it.degreeOfOpening-- })
+        ),
+        startState: States = States.OPEN,
+        states: Set<States> = setOf(States.OPEN, States.CLOSE, States.AJAR),
+        context: DoorFSMContext = DoorFSMContext(),
         transitionMiddlewares: Map<String, List<TransitionMiddleware<DoorFSMContext>>> = mapOf(),
         transitionAllMiddlewares: List<TransitionNameMiddleware<DoorFSMContext>> = listOf(),
         transitionCallbacks: Map<String, List<Event<DoorFSMContext>>> = mapOf(),
@@ -49,9 +78,9 @@ class TestDoor {
 
     private val typedDoorFactory: StateMachineFactory<States, DoorFSMContext> = {
             transitionsA,
+            contextA,
             startStateA,
             statesA,
-            contextA,
             transitionMiddlewaresA,
             transitionAllMiddlewaresA,
             transitionCallbacksA,
@@ -135,41 +164,7 @@ class TestDoor {
 
     @Test
     fun testSimpleBuild() {
-        val doorFSM = TypesDoorStateMachine(
-            startState = States.OPEN,
-            states = listOf(States.OPEN, States.CLOSE, States.AJAR),
-            context = DoorFSMContext(),
-            transitions = listOf(
-                Transition(name = "preOpen",
-                    start = States.CLOSE,
-                    end = States.AJAR,
-                    event = { it.degreeOfOpening = 1 }),
-                Transition(name = "preClose",
-                    start = States.OPEN,
-                    end = States.AJAR,
-                    event = { it.degreeOfOpening = 99 }),
-                Transition(name = "open",
-                    start = States.AJAR,
-                    end = States.OPEN,
-                    condition = { it.degreeOfOpening >= 99 },
-                    event = { it.degreeOfOpening = 100 }),
-                Transition(name = "close",
-                    start = States.AJAR,
-                    end = States.CLOSE,
-                    condition = { it.degreeOfOpening <= 1 },
-                    event = { it.degreeOfOpening = 0 }),
-                Transition(name = "ajarPlus",
-                    start = States.AJAR,
-                    end = States.AJAR,
-                    condition = { it.degreeOfOpening in 1..98 },
-                    event = { it.degreeOfOpening++ }),
-                Transition(name = "ajarMinus",
-                    start = States.AJAR,
-                    end = States.AJAR,
-                    condition = { it.degreeOfOpening in 2..99 },
-                    event = { it.degreeOfOpening-- })
-            )
-        )
+        val doorFSM = TypesDoorStateMachine()
         testDoor(doorFSM)
         typedTestDoor(doorFSM)
     }

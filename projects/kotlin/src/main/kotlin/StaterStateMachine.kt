@@ -7,6 +7,8 @@ import com.fasterxml.jackson.module.kotlin.readValue
 
 interface Context
 
+class EmptyContext : Context
+
 interface ContextJsonAdapter<C : Context> {
     fun toJson(context: C): String
     fun fromJson(json: String): C
@@ -19,9 +21,9 @@ typealias TransitionMiddleware<C> = (C, Event<C>) -> Unit
 typealias TransitionNameMiddleware<C> = (String, C, NameEvent<C>) -> Unit
 typealias StateMachineFactory<T, C> = (
     transitions: List<Transition<T, C>>,
-    state: T,
-    states: List<T>,
     context: C,
+    state: T,
+    states: Set<T>,
     transitionMiddlewares: Map<String, List<TransitionMiddleware<C>>>,
     transitionAllMiddlewares: List<TransitionNameMiddleware<C>>,
     transitionCallbacks: Map<String, List<Event<C>>>,
@@ -52,9 +54,9 @@ data class JsonState<T>(
 
 abstract class StaterStateMachine<T, C : Context>(
     private val transitions: List<Transition<T, C>>,
-    private var startState: T,
-    private val states: List<T>,
     private var context: C,
+    private var startState: T = transitions[0].start,
+    private val states: Set<T> = transitions.map { it.start }.toSet() + transitions.map { it.end }.toSet(),
     private var state: T = startState,
     private val transitionsGroupedStart: Map<T, List<Transition<T, C>>> = transitions.groupBy { it.start },
     private val transitionsByName: Map<String, Transition<T, C>> = transitions.associateBy { it.name },
@@ -129,7 +131,7 @@ abstract class StaterStateMachine<T, C : Context>(
 
     fun toJsonSchema() = jacksonObjectMapper().writeValueAsString(
         JsonSchema(
-            states = states, startState = startState, transitions = transitions
+            states = states.toList(), startState = startState, transitions = transitions
         )
     ) ?: error("Cant serialize")
 
@@ -149,9 +151,9 @@ abstract class StaterStateMachine<T, C : Context>(
 
 class BaseFSM<T, C : Context>(
     transitions: List<Transition<T, C>>,
-    startState: T,
-    states: List<T>,
     context: C,
+    startState: T,
+    states: Set<T>,
     transitionMiddlewares: Map<String, List<TransitionMiddleware<C>>>,
     transitionAllMiddlewares: List<TransitionNameMiddleware<C>>,
     transitionCallbacks: Map<String, List<Event<C>>>,
@@ -161,9 +163,9 @@ class BaseFSM<T, C : Context>(
     contextJsonAdapter: ContextJsonAdapter<C>?,
 ) : StaterStateMachine<T, C>(
     transitions = transitions,
+    context = context,
     startState = startState,
     states = states,
-    context = context,
     transitionMiddlewares = transitionMiddlewares,
     transitionAllMiddlewares = transitionAllMiddlewares,
     transitionCallbacks = transitionCallbacks,
@@ -177,7 +179,7 @@ class BaseFSM<T, C : Context>(
 class StaterStateMachineBuilder<T, C : Context>(
     private val transitions: MutableMap<String, Transition<T, C>> = mutableMapOf(),
     private var state: T? = null,
-    private var states: MutableList<T> = mutableListOf(),
+    private var states: MutableSet<T> = mutableSetOf(),
     private var context: C? = null,
 
     private val transitionMiddlewares: MutableMap<String, MutableList<TransitionMiddleware<C>>> = mutableMapOf(),
@@ -190,9 +192,9 @@ class StaterStateMachineBuilder<T, C : Context>(
     private val stateAllCallbacks: MutableList<StateEvent<T, C>> = mutableListOf(),
     private var factory: StateMachineFactory<T, C> = {
             transitionsA,
+            contextA,
             startStateA,
             statesA,
-            contextA,
             transitionMiddlewaresA,
             transitionAllMiddlewaresA,
             transitionCallbacksA,
@@ -297,9 +299,9 @@ class StaterStateMachineBuilder<T, C : Context>(
     fun build(): StaterStateMachine<T, C> {
         return factory(
             transitions.values.toList(),
-            state ?: error("Start state must be set"),
-            states,
             context ?: error("Context must be set"),
+            state ?: transitions.values.toList()[0].start,
+            states,
             transitionMiddlewares,
             transitionAllMiddlewares,
             transitionCallbacks,
