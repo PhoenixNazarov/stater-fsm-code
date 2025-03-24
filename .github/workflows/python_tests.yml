@@ -1,0 +1,43 @@
+name: Python Tests
+
+#on:
+#  push:
+#    paths:
+#      - 'projects/python/**'
+#  pull_request:
+#    paths:
+#      - 'projects/python/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7, 3.8, 3.9, 3.10]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3
+
+      - name: Install dependencies
+        run: |
+          cd projects/python
+          poetry install
+
+      - name: Install pytest and pytest-cov
+        run: |
+          cd my-folder
+          poetry add --dev pytest pytest-cov
+
+      - name: Run tests with pytest
+        run: |
+          cd my-folder  # Переход в папку с проектом
+          poetry run pytest --disable-warnings -q --cov=my_folder --cov-report=term-missing
