@@ -1,11 +1,23 @@
 import json
 from abc import ABC, abstractmethod
-from typing import Callable, TypeVar, Generic, Optional, List, Dict
+from typing import Callable, TypeVar, Generic, Optional, List, Dict, Set
 
 from pydantic import BaseModel, Field
 
+__all__ = [
+    'Context',
+    'EmptyContext',
+    'StaterStateMachine',
+    'Transition',
+    'StaterStateMachineBuilder',
+    'ContextJsonAdapter'
+]
 
 class Context:
+    ...
+
+
+class EmptyContext(Context):
     ...
 
 
@@ -56,9 +68,9 @@ class StaterStateMachine(Generic[T, C]):
     def __init__(
             self,
             transitions: List[Transition[T, C]],
-            start_state: T,
-            states: List[T],
             context: C,
+            start_state: Optional[T] = None,
+            states: Optional[Set[T]] = None,
             transition_middlewares: Optional[Dict[str, List[Callable[[C, Callable], None]]]] = None,
             transition_all_middlewares: Optional[List[Callable[[str, C, Callable], None]]] = None,
             transition_callbacks: Optional[Dict[str, List[Callable[[C], None]]]] = None,
@@ -69,8 +81,14 @@ class StaterStateMachine(Generic[T, C]):
             state: T | None = None,
     ):
         self.__transitions = transitions
-        self.__states = states
-        self.__start_state = start_state
+        if states is None:
+            self.__states = set()
+            for i in self.__transitions:
+                self.__states.add(i.start)
+                self.__states.add(i.end)
+        else:
+            self.__states = states
+        self.__start_state = start_state or self.__transitions[0].start
         self.__state = state or start_state
         self.__context = context
         self.__transitions_grouped_start = {t.start: [] for t in transitions}
@@ -146,7 +164,7 @@ class StaterStateMachine(Generic[T, C]):
                 pass
 
     def to_json_schema(self) -> str:
-        return JsonSchema(states=self.__states, start_state=self.__start_state, transitions=self.__transitions).json()
+        return JsonSchema(states=list(self.__states), start_state=self.__start_state, transitions=self.__transitions).json()
 
     def to_json(self) -> str:
         if not self.__context_json_adapter:
@@ -170,9 +188,9 @@ class BaseFSM(Generic[T, C], StaterStateMachine[T, C]):
 
 StateMachineFactory = Callable[[
     list[Transition[T, C]],
-    T,
-    list[T],
     C,
+    T,
+    Set[T],
     dict[str, list[TransitionMiddleware[C]]],
     list[TransitionNameMiddleware[C]],
     dict[str, list[Event[C]]],
@@ -187,7 +205,7 @@ class StaterStateMachineBuilder(Generic[T, C]):
     def __init__(self):
         self.__transitions: Dict[str, Transition[T, C]] = {}
         self.__state: T = None
-        self.__states: list[T] = []
+        self.__states: Set[T] = set()
         self.__context: C | None = None
         self.__transition_middlewares: dict[str, list[TransitionMiddleware[C]]] = {}
         self.__transition_all_middlewares: list[TransitionNameMiddleware[C]] = []
@@ -198,29 +216,29 @@ class StaterStateMachineBuilder(Generic[T, C]):
 
         def default_factory(
                 transitions_a,
+                context_a,
                 start_state_a,
                 states_a,
-                context_a,
-                transitionMiddlewares_a,
-                transitionAllMiddlewares_a,
-                transitionCallbacks_a,
-                transitionAllCallbacks_a,
-                stateCallbacks_a,
-                stateAllCallbacks_a,
-                contextJsonAdapter_a
+                transition_middlewares_a,
+                transition_all_middlewares_a,
+                transition_callbacks_a,
+                transition_all_callbacks_a,
+                state_callbacks_a,
+                state_all_callbacks_a,
+                context_json_adapter_a
         ):
             return BaseFSM(
                 transitions=transitions_a,
+                context=context_a,
                 start_state=start_state_a,
                 states=states_a,
-                context=context_a,
-                transition_middlewares=transitionMiddlewares_a,
-                transition_all_middlewares=transitionAllMiddlewares_a,
-                transition_callbacks=transitionCallbacks_a,
-                transition_all_callbacks=transitionAllCallbacks_a,
-                state_callbacks=stateCallbacks_a,
-                state_all_callbacks=stateAllCallbacks_a,
-                context_json_adapter=contextJsonAdapter_a
+                transition_middlewares=transition_middlewares_a,
+                transition_all_middlewares=transition_all_middlewares_a,
+                transition_callbacks=transition_callbacks_a,
+                transition_all_callbacks=transition_all_callbacks_a,
+                state_callbacks=state_callbacks_a,
+                state_all_callbacks=state_all_callbacks_a,
+                context_json_adapter=context_json_adapter_a
             )
 
         self.__factory: StateMachineFactory[T, C] = default_factory
@@ -235,7 +253,7 @@ class StaterStateMachineBuilder(Generic[T, C]):
 
     def add_state(self, state: T):
         if state not in self.__states:
-            self.__states.append(state)
+            self.__states.add(state)
         return self
 
     def set_transition_condition(self, name: str, condition: Callable[[C], bool]):
@@ -304,15 +322,16 @@ class StaterStateMachineBuilder(Generic[T, C]):
         return self
 
     def build(self) -> StaterStateMachine[T, C]:
-        if self.__state is None:
-            raise ValueError("Start state must be set")
+        state = self.__state
+        if state is None:
+            state = list(self.__transitions.values())[0].start
         if self.__context is None:
             raise ValueError("Context must be set")
         return self.__factory(
             list(self.__transitions.values()),
-            self.__state,
-            self.__states,
             self.__context,
+            state,
+            self.__states,
             self.__transition_middlewares,
             self.__transition_all_middlewares,
             self.__transition_callbacks,

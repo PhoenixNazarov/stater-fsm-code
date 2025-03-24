@@ -225,7 +225,6 @@ def test_json_schema():
         .set_factory(typed_door_factory)
         .build()
     )
-    print(door_fsm)
 
     assert json_schema == door_fsm.to_json_schema()
 
