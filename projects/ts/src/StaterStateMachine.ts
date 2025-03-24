@@ -12,7 +12,7 @@ export type NameFSMEvent<C> = (name: string, context: C) => void
 export type StateFSMEvent<T, C> = (state: T, context: C) => void
 export type TransitionMiddleware<C> = (context: C, FSMEvent: FSMEvent<C>) => void
 export type TransitionNameMiddleware<C> = (name: string, context: C, FSMEvent: NameFSMEvent<C>) => void
-export type StateMachineFactory<T, C> = (
+export type StateMachineFactory<T, C extends Context> = (
     transitions: Transition<T, C>[],
     state: T,
     states: T[],
@@ -30,14 +30,14 @@ export interface Transition<T, C extends Context> {
     name: string
     start: T
     end: T
-    condition?: ((C) => boolean)
+    condition?: ((context: C) => boolean)
     event?: FSMEvent<C>
 }
 
 interface JsonSchema<T> {
     states: T[]
     startState: T
-    transitions: Transition<T, unknown>[]
+    transitions: Transition<T, Context>[]
 }
 
 interface JsonState<T> {
@@ -180,7 +180,7 @@ export abstract class StaterStateMachine<T, C extends Context> {
 
     public fromJson(json: string, stateConverter: (state: string) => T): void {
         const jsonState = JSON.parse(json) as JsonState<T>;
-        this.state = stateConverter(jsonState.state.toString());
+        this.state = stateConverter(String(jsonState.state));
         if (this.contextJsonAdapter) {
             this.context = this.contextJsonAdapter.fromJson(jsonState.context);
         }
@@ -219,7 +219,7 @@ class BaseFSM<T, C extends Context> extends StaterStateMachine<T, C> {
 }
 
 
-export class StaterStateMachineBuilder<T, C extends Context> {
+export class StaterStateMachineBuilder<T extends string, C extends Context> {
     private transitions: Map<string, Transition<T, C>> = new Map();
     private state: T | null = null;
     private states: T[] = [];
