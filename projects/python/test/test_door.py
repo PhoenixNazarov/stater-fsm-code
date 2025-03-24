@@ -256,7 +256,7 @@ def test_string_generic():
 def test_json_dump():
     class JsonConverter(ContextJsonAdapter[DoorFSMContext]):
         def to_json(self, context: DoorFSMContext):
-            return context.degree_of_opening
+            return str(context.degree_of_opening)
 
         def from_json(self, json: str):
             return DoorFSMContext(degree_of_opening=int(json))
