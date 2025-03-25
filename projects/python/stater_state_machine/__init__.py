@@ -47,8 +47,8 @@ class Transition(BaseModel, Generic[T, C]):
     name: str
     start: T
     end: T
-    condition: Optional[Callable[[C], bool], None] = Field(None, exclude=True)
-    event: Optional[Event[C], None] = Field(None, exclude=True)
+    condition: Optional[Callable[[C], bool]] = Field(None, exclude=True)
+    event: Optional[Event[C]] = Field(None, exclude=True)
 
 
 class JsonSchema(BaseModel, Generic[T]):
