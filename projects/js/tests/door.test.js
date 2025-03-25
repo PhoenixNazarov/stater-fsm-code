@@ -103,64 +103,64 @@ const typedDoorFactory = (
 
 
 function testDoor(door) {
-    console.assert(door.getState() === States.OPEN);
-    console.assert(door.getContext().degreeOfOpening === 100);
+    expect(door.getState()).toBe(States.OPEN);
+    expect(door.getContext().degreeOfOpening).toBe(100);
     door.transition("preClose");
-    console.assert(door.getState() === States.AJAR);
-    console.assert(door.getContext().degreeOfOpening === 99);
+    expect(door.getState()).toBe(States.AJAR);
+    expect(door.getContext().degreeOfOpening).toBe(99);
     while (door.getContext().degreeOfOpening > 1) {
         door.transition("ajarMinus");
-        console.assert(door.getState() === States.AJAR);
+        expect(door.getState()).toBe(States.AJAR);
     }
-    console.assert(door.getContext().degreeOfOpening === 1);
+    expect(door.getContext().degreeOfOpening).toBe(1);
     door.transition("close");
-    console.assert(door.getContext().degreeOfOpening === 0);
-    console.assert(door.getState() === States.CLOSE);
+    expect(door.getContext().degreeOfOpening).toBe(0);
+    expect(door.getState()).toBe(States.CLOSE);
     door.transition("preOpen");
-    console.assert(door.getContext().degreeOfOpening === 1);
-    console.assert(door.getState() === States.AJAR);
+    expect(door.getContext().degreeOfOpening).toBe(1);
+    expect(door.getState()).toBe(States.AJAR);
     door.transition("ajarPlus");
-    console.assert(door.getState() === States.AJAR);
-    console.assert(door.getContext().degreeOfOpening === 2);
+    expect(door.getState()).toBe(States.AJAR);
+    expect(door.getContext().degreeOfOpening).toBe(2);
     while (door.getContext().degreeOfOpening < 99) {
         door.transition("ajarPlus");
-        console.assert(door.getState() === States.AJAR);
+        expect(door.getState()).toBe(States.AJAR);
     }
     door.transition("open");
-    console.assert(door.getState() === States.OPEN);
-    console.assert(door.getContext().degreeOfOpening === 100);
+    expect(door.getState()).toBe(States.OPEN);
+    expect(door.getContext().degreeOfOpening).toBe(100);
 }
 
 function typedTestDoor(door) {
-    console.assert(door.getState() === States.OPEN);
-    console.assert(door.getContext().degreeOfOpening === 100);
+    expect(door.getState()).toBe(States.OPEN);
+    expect(door.getContext().degreeOfOpening).toBe(100);
     door.preClose();
-    console.assert(door.getState() === States.AJAR);
-    console.assert(door.getContext().degreeOfOpening === 99);
+    expect(door.getState()).toBe(States.AJAR);
+    expect(door.getContext().degreeOfOpening).toBe(99);
     while (door.getContext().degreeOfOpening > 1) {
         door.ajarMinus();
-        console.assert(door.getState() === States.AJAR);
+        expect(door.getState()).toBe(States.AJAR);
     }
-    console.assert(door.getContext().degreeOfOpening === 1);
+    expect(door.getContext().degreeOfOpening).toBe(1);
     door.close();
-    console.assert(door.getContext().degreeOfOpening === 0);
-    console.assert(door.getState() === States.CLOSE);
+    expect(door.getContext().degreeOfOpening).toBe(0);
+    expect(door.getState()).toBe(States.CLOSE);
     door.preOpen();
-    console.assert(door.getContext().degreeOfOpening === 1);
-    console.assert(door.getState() === States.AJAR);
+    expect(door.getContext().degreeOfOpening).toBe(1);
+    expect(door.getState()).toBe(States.AJAR);
     door.ajarPlus();
-    console.assert(door.getState() === States.AJAR);
-    console.assert(door.getContext().degreeOfOpening === 2);
+    expect(door.getState()).toBe(States.AJAR);
+    expect(door.getContext().degreeOfOpening).toBe(2);
     while (door.getContext().degreeOfOpening < 99) {
         door.ajarPlus();
-        console.assert(door.getState() === States.AJAR);
+        expect(door.getState()).toBe(States.AJAR);
     }
     door.open();
-    console.assert(door.getState() === States.OPEN);
-    console.assert(door.getContext().degreeOfOpening === 100);
+    expect(door.getState()).toBe(States.OPEN);
+    expect(door.getContext().degreeOfOpening).toBe(100);
 }
 
-function testSimpleBuild() {
+test('testSimpleBuild', () => {
     const doorFSM = new TypesDoorStateMachine([
             {
                 name: "preOpen",
@@ -222,10 +222,10 @@ function testSimpleBuild() {
 
     testDoor(doorFSM);
     typedTestDoor(doorFSM);
-}
+})
 
 
-function testBuilder() {
+test('testBuilder', () => {
     const doorFSM = new StaterStateMachineBuilder()
         .addTransition("preOpen", States.CLOSE, States.AJAR, undefined, (context) => {
             context.degreeOfOpening = 1
@@ -250,7 +250,7 @@ function testBuilder() {
         .build();
 
     testDoor(doorFSM);
-}
+})
 
 function structureBuild() {
     return new StaterStateMachineBuilder()
@@ -289,27 +289,27 @@ function eventsBuild(builder) {
 }
 
 
-function testBuilder2() {
+test('testBuilder2', () => {
     const doorFSM = eventsBuild(structureBuild())
         .setContext(buildDoorDSMContext())
         .setStartState(States.OPEN)
         .build()
 
     testDoor(doorFSM)
-}
+})
 
-function testAutoTransition() {
+test('testAutoTransition', () => {
     const doorFSM = eventsBuild(structureBuild())
         .setContext(buildDoorDSMContext())
         .setStartState(States.OPEN)
         .build()
 
     doorFSM.autoTransition()
-    console.assert(doorFSM.getState() === States.AJAR)
-}
+    expect(doorFSM.getState()).toBe(States.AJAR)
+})
 
 
-function testBuilderFactory() {
+test('testBuilderFactory', () => {
     const doorFSM = eventsBuild(structureBuild())
         .setContext(buildDoorDSMContext())
         .setStartState(States.OPEN)
@@ -317,13 +317,13 @@ function testBuilderFactory() {
         .build();
 
     testDoor(doorFSM);
-    console.assert(doorFSM instanceof TypesDoorStateMachine)
+    expect(doorFSM instanceof TypesDoorStateMachine).toBe(true)
     if (doorFSM instanceof TypesDoorStateMachine) {
         typedTestDoor(doorFSM);
     }
-}
+})
 
-function testJsonSchema() {
+test('testJsonSchema', () => {
     const validDoorFSM = eventsBuild(structureBuild())
         .setContext(buildDoorDSMContext())
         .setStartState(States.OPEN)
@@ -340,16 +340,16 @@ function testJsonSchema() {
         .setFactory(typedDoorFactory)
         .build();
 
-    console.assert(JSON.stringify(jsonSchema) === JSON.stringify(doorFSM.toJsonSchema()));
+    expect(JSON.stringify(jsonSchema)).toBe(JSON.stringify(doorFSM.toJsonSchema()));
 
     testDoor(doorFSM);
 
     if (doorFSM instanceof TypesDoorStateMachine) {
         typedTestDoor(doorFSM);
     }
-}
+})
 
-function testStringGeneric() {
+test('testStringGeneric', () => {
     const validDoorFSM = eventsBuild(structureBuild())
         .setContext(buildDoorDSMContext())
         .setStartState(States.OPEN)
@@ -364,11 +364,10 @@ function testStringGeneric() {
         .setContext(buildDoorDSMContext())
         .build();
 
-    console.assert(stringDoorFSM.getState() === "OPEN");
+    expect(stringDoorFSM.getState()).toBe("OPEN");
+})
 
-}
-
-function testJsonDump() {
+test('testJsonDump', () => {
     class JsonConverter {
         toJson(context) {
             return context.degreeOfOpening.toString();
@@ -385,22 +384,21 @@ function testJsonDump() {
         .setContextJsonAdapter(new JsonConverter())
         .build();
 
-    console.assert(validDoorFSM.getState() === States.OPEN);
-    console.assert(validDoorFSM.getContext().degreeOfOpening === 100);
+    expect(validDoorFSM.getState()).toBe(States.OPEN);
+    expect(validDoorFSM.getContext().degreeOfOpening).toBe(100);
 
     const dump = validDoorFSM.toJson();
 
     validDoorFSM.transition("preClose");
-    console.assert(validDoorFSM.getState() === States.AJAR);
-    console.assert(validDoorFSM.getContext().degreeOfOpening === 99);
+    expect(validDoorFSM.getState()).toBe(States.AJAR);
+    expect(validDoorFSM.getContext().degreeOfOpening).toBe(99);
 
     validDoorFSM.fromJson(dump, getState);
-    console.assert(validDoorFSM.getState() === States.OPEN);
-    console.assert(validDoorFSM.getContext().degreeOfOpening === 100);
+    expect(validDoorFSM.getState()).toBe(States.OPEN);
+    expect(validDoorFSM.getContext().degreeOfOpening).toBe(100);
+})
 
-}
-
-function testMiddlewareAndCallbacks() {
+test('testMiddlewareAndCallbacks', () => {
     let transitionMiddleware = 0;
     let transitionAllMiddleware = 0;
     let subscribeOnTransition = 0;
@@ -435,21 +433,10 @@ function testMiddlewareAndCallbacks() {
 
     testDoor(validDoorFSM);
 
-    console.assert(transitionMiddleware === 1);
-    console.assert(transitionAllMiddleware === 200);
-    console.assert(subscribeOnTransition === 1);
-    console.assert(subscribeOnAllTransition === 200);
-    console.assert(subscribeOnState === 198);
-    console.assert(subscribeOnAllState === 200);
-}
-
-
-testSimpleBuild()
-testBuilder()
-testBuilder2()
-testAutoTransition()
-testBuilderFactory()
-testJsonSchema()
-testStringGeneric()
-testJsonDump()
-testMiddlewareAndCallbacks()
+    expect(transitionMiddleware).toBe(1);
+    expect(transitionAllMiddleware).toBe(200);
+    expect(subscribeOnTransition).toBe(1);
+    expect(subscribeOnAllTransition).toBe(200);
+    expect(subscribeOnState).toBe(198);
+    expect(subscribeOnAllState).toBe(200);
+})

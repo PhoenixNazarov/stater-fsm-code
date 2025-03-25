@@ -1,0 +1,33 @@
+name: JavaScript Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ['16', '18', '20']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: projects/js/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd projects/js
+          npm ci
+
+      - name: Run tests with Jest
+        run: |
+          cd projects/js
+          npm test -- --coverage --json --outputFile=test-results.json
