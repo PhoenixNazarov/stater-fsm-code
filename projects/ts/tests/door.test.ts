@@ -5,14 +5,17 @@ import {
     NameFSMEvent,
     StateFSMEvent,
     StateMachineFactory,
-    StaterStateMachine, StaterStateMachineBuilder,
+    StaterStateMachine,
+    StaterStateMachineBuilder,
     Transition,
     TransitionMiddleware,
     TransitionNameMiddleware
 } from "../src/StaterStateMachine";
 
 enum States {
-    CLOSE = "CLOSE", AJAR = "AJAR", OPEN = "OPEN"
+    CLOSE = "CLOSE",
+    AJAR = "AJAR",
+    OPEN = "OPEN"
 }
 
 interface DoorFSMContext extends Context {
@@ -27,9 +30,9 @@ let buildDoorDSMContext: () => DoorFSMContext = () => {
 class TypesDoorStateMachine extends StaterStateMachine<States, DoorFSMContext> {
     constructor(
         transitions: Transition<States, DoorFSMContext>[],
-        startState: States,
-        states: States[],
         context: DoorFSMContext,
+        startState: States,
+        states: Set<States>,
         transitionMiddlewares: Map<string, TransitionMiddleware<DoorFSMContext>[]> = new Map(),
         transitionAllMiddlewares: TransitionNameMiddleware<DoorFSMContext>[] = [],
         transitionCallbacks: Map<string, FSMEvent<DoorFSMContext>[]> = new Map(),
@@ -40,9 +43,9 @@ class TypesDoorStateMachine extends StaterStateMachine<States, DoorFSMContext> {
     ) {
         super(
             transitions,
+            context,
             startState,
             states,
-            context,
             transitionMiddlewares,
             transitionAllMiddlewares,
             transitionCallbacks,
@@ -79,32 +82,8 @@ class TypesDoorStateMachine extends StaterStateMachine<States, DoorFSMContext> {
 }
 
 
-const typedDoorFactory: StateMachineFactory<States, DoorFSMContext> = (
-    transitionsA: Transition<States, DoorFSMContext>[],
-    startStateA: States,
-    statesA: States[],
-    contextA: DoorFSMContext,
-    transitionMiddlewaresA: Map<string, TransitionMiddleware<DoorFSMContext>[]>,
-    transitionAllMiddlewaresA: TransitionNameMiddleware<DoorFSMContext>[],
-    transitionCallbacksA: Map<string, FSMEvent<DoorFSMContext>[]>,
-    transitionAllCallbacksA: NameFSMEvent<DoorFSMContext>[],
-    stateCallbacksA: Map<States, FSMEvent<DoorFSMContext>[]>,
-    stateAllCallbacksA: StateFSMEvent<States, DoorFSMContext>[],
-    contextJsonAdapterA: ContextJsonAdapter<DoorFSMContext> | undefined
-): StaterStateMachine<States, DoorFSMContext> => {
-    return new TypesDoorStateMachine(
-        transitionsA,
-        startStateA,
-        statesA,
-        contextA,
-        transitionMiddlewaresA,
-        transitionAllMiddlewaresA,
-        transitionCallbacksA,
-        transitionAllCallbacksA,
-        stateCallbacksA,
-        stateAllCallbacksA,
-        contextJsonAdapterA
-    );
+const typedDoorFactory: StateMachineFactory<States, DoorFSMContext> = (...args): StaterStateMachine<States, DoorFSMContext> => {
+    return new TypesDoorStateMachine(...args);
 };
 
 
@@ -221,9 +200,9 @@ test('testSimpleBuild', () => {
                 }
             }
         ],
-        States.OPEN,
-        [States.OPEN, States.CLOSE, States.AJAR],
         buildDoorDSMContext(),
+        States.OPEN,
+        new Set([States.OPEN, States.CLOSE, States.AJAR]),
     );
 
     doorTest(doorFSM);
@@ -233,12 +212,24 @@ test('testSimpleBuild', () => {
 
 test('testBuilder', () => {
     const doorFSM = new StaterStateMachineBuilder<States, DoorFSMContext>()
-        .addTransition("preOpen", States.CLOSE, States.AJAR, undefined, (context) => { context.degreeOfOpening = 1 })
-        .addTransition("preClose", States.OPEN, States.AJAR, undefined, (context) => { context.degreeOfOpening = 99 })
-        .addTransition("open", States.AJAR, States.OPEN, (context) => context.degreeOfOpening >= 99, (context) => { context.degreeOfOpening = 100 })
-        .addTransition("close", States.AJAR, States.CLOSE, (context) => context.degreeOfOpening <= 1, (context) => { context.degreeOfOpening = 0 })
-        .addTransition("ajarPlus", States.AJAR, States.AJAR, (context) => context.degreeOfOpening >= 1 && context.degreeOfOpening <= 98, (context) => { context.degreeOfOpening++ })
-        .addTransition("ajarMinus", States.AJAR, States.AJAR, (context) => context.degreeOfOpening >= 2 && context.degreeOfOpening <= 99, (context) => { context.degreeOfOpening-- })
+        .addTransition("preOpen", States.CLOSE, States.AJAR, undefined, (context) => {
+            context.degreeOfOpening = 1
+        })
+        .addTransition("preClose", States.OPEN, States.AJAR, undefined, (context) => {
+            context.degreeOfOpening = 99
+        })
+        .addTransition("open", States.AJAR, States.OPEN, (context) => context.degreeOfOpening >= 99, (context) => {
+            context.degreeOfOpening = 100
+        })
+        .addTransition("close", States.AJAR, States.CLOSE, (context) => context.degreeOfOpening <= 1, (context) => {
+            context.degreeOfOpening = 0
+        })
+        .addTransition("ajarPlus", States.AJAR, States.AJAR, (context) => context.degreeOfOpening >= 1 && context.degreeOfOpening <= 98, (context) => {
+            context.degreeOfOpening++
+        })
+        .addTransition("ajarMinus", States.AJAR, States.AJAR, (context) => context.degreeOfOpening >= 2 && context.degreeOfOpening <= 99, (context) => {
+            context.degreeOfOpening--
+        })
         .setContext(buildDoorDSMContext())
         .setStartState(States.OPEN)
         .build();
@@ -258,20 +249,32 @@ function structureBuild() {
 
 function eventsBuild(builder: StaterStateMachineBuilder<States, DoorFSMContext>): StaterStateMachineBuilder<States, DoorFSMContext> {
     return builder
-        .setTransitionEvent("preOpen", (context: DoorFSMContext) => { context.degreeOfOpening = 1 })
-        .setTransitionEvent("preClose", (context: DoorFSMContext) => { context.degreeOfOpening = 99 })
+        .setTransitionEvent("preOpen", (context: DoorFSMContext) => {
+            context.degreeOfOpening = 1
+        })
+        .setTransitionEvent("preClose", (context: DoorFSMContext) => {
+            context.degreeOfOpening = 99
+        })
         .setTransitionCondition("open", (context: DoorFSMContext) => context.degreeOfOpening >= 99)
-        .setTransitionEvent("open", (context: DoorFSMContext) => { context.degreeOfOpening = 100 })
+        .setTransitionEvent("open", (context: DoorFSMContext) => {
+            context.degreeOfOpening = 100
+        })
         .setTransitionCondition("close", (context: DoorFSMContext) => context.degreeOfOpening <= 1)
-        .setTransitionEvent("close", (context: DoorFSMContext) => { context.degreeOfOpening = 0 })
+        .setTransitionEvent("close", (context: DoorFSMContext) => {
+            context.degreeOfOpening = 0
+        })
         .setTransitionCondition("ajarPlus", (context: DoorFSMContext) => context.degreeOfOpening >= 1 && context.degreeOfOpening <= 98)
-        .setTransitionEvent("ajarPlus", (context: DoorFSMContext) => { context.degreeOfOpening++ })
+        .setTransitionEvent("ajarPlus", (context: DoorFSMContext) => {
+            context.degreeOfOpening++
+        })
         .setTransitionCondition("ajarMinus", (context: DoorFSMContext) => context.degreeOfOpening >= 2 && context.degreeOfOpening <= 99)
-        .setTransitionEvent("ajarMinus", (context: DoorFSMContext) => { context.degreeOfOpening-- });
+        .setTransitionEvent("ajarMinus", (context: DoorFSMContext) => {
+            context.degreeOfOpening--
+        });
 }
 
 
-test('testBuilder2',() => {
+test('testBuilder2', () => {
     const doorFSM = eventsBuild(structureBuild())
         .setContext(buildDoorDSMContext())
         .setStartState(States.OPEN)
@@ -280,7 +283,7 @@ test('testBuilder2',() => {
     doorTest(doorFSM)
 })
 
-test('testAutoTransition',() => {
+test('testAutoTransition', () => {
     const doorFSM = eventsBuild(structureBuild())
         .setContext(buildDoorDSMContext())
         .setStartState(States.OPEN)

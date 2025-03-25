@@ -14,9 +14,9 @@ export type TransitionMiddleware<C> = (context: C, FSMEvent: FSMEvent<C>) => voi
 export type TransitionNameMiddleware<C> = (name: string, context: C, FSMEvent: NameFSMEvent<C>) => void
 export type StateMachineFactory<T, C extends Context> = (
     transitions: Transition<T, C>[],
-    state: T,
-    states: T[],
     context: C,
+    state: T,
+    states: Set<T>,
     transitionMiddlewares: Map<string, TransitionMiddleware<C>[]>,
     transitionAllMiddlewares: TransitionNameMiddleware<C>[],
     transitionCallbacks: Map<string, FSMEvent<C>[]>,
@@ -60,9 +60,9 @@ export abstract class StaterStateMachine<T, C extends Context> {
 
     constructor(
         private transitions: Transition<T, C>[],
-        private startState: T,
-        private states: T[],
         private context: C,
+        private startState: T = transitions[0].start,
+        private states: Set<T> = new Set([...transitions.map(el => el.start), ...transitions.map(el => el.end)]),
         transitionMiddlewares: Map<string, TransitionMiddleware<C>[]> = new Map(),
         transitionAllMiddlewares: TransitionNameMiddleware<C>[] = [],
         transitionCallbacks: Map<string, FSMEvent<C>[]> = new Map(),
@@ -161,11 +161,12 @@ export abstract class StaterStateMachine<T, C extends Context> {
     }
 
     public toJsonSchema(): string {
-        return JSON.stringify({
-            states: this.states,
+        const jsonSchema = {
+            states: [...this.states],
             startState: this.startState,
             transitions: this.transitions
-        });
+        }
+        return JSON.stringify(jsonSchema);
     }
 
     public toJson(): string {
@@ -191,9 +192,9 @@ export abstract class StaterStateMachine<T, C extends Context> {
 class BaseFSM<T, C extends Context> extends StaterStateMachine<T, C> {
     constructor(
         transitions: Transition<T, C>[],
-        startState: T,
-        states: T[],
         context: C,
+        startState: T,
+        states: Set<T>,
         transitionMiddlewares: Map<string, TransitionMiddleware<C>[]>,
         transitionAllMiddlewares: TransitionNameMiddleware<C>[],
         transitionCallbacks: Map<string, FSMEvent<C>[]>,
@@ -204,9 +205,9 @@ class BaseFSM<T, C extends Context> extends StaterStateMachine<T, C> {
     ) {
         super(
             transitions,
+            context,
             startState,
             states,
-            context,
             transitionMiddlewares,
             transitionAllMiddlewares,
             transitionCallbacks,
@@ -222,7 +223,7 @@ class BaseFSM<T, C extends Context> extends StaterStateMachine<T, C> {
 export class StaterStateMachineBuilder<T extends string, C extends Context> {
     private transitions: Map<string, Transition<T, C>> = new Map();
     private state: T | null = null;
-    private states: T[] = [];
+    private states: Set<T> = new Set();
     private context: C | null = null;
 
     private transitionMiddlewares: Map<string, TransitionMiddleware<C>[]> = new Map();
@@ -236,9 +237,9 @@ export class StaterStateMachineBuilder<T extends string, C extends Context> {
 
     private factory: StateMachineFactory<T, C> = (
         transitions,
+        context,
         startState,
         states,
-        context,
         transitionMiddlewares,
         transitionAllMiddlewares,
         transitionCallbacks,
@@ -249,9 +250,9 @@ export class StaterStateMachineBuilder<T extends string, C extends Context> {
     ) => {
         return new BaseFSM(
             transitions,
+            context,
             startState,
             states,
-            context,
             transitionMiddlewares,
             transitionAllMiddlewares,
             transitionCallbacks,
@@ -278,8 +279,8 @@ export class StaterStateMachineBuilder<T extends string, C extends Context> {
     }
 
     addState(state: T): this {
-        if (!this.states.includes(state)) {
-            this.states.push(state);
+        if (!this.states.has(state)) {
+            this.states.add(state);
         }
         return this;
     }
@@ -375,9 +376,9 @@ export class StaterStateMachineBuilder<T extends string, C extends Context> {
 
         return this.factory(
             Array.from(this.transitions.values()),
+            this.context,
             this.state,
             this.states,
-            this.context,
             this.transitionMiddlewares,
             this.transitionAllMiddlewares,
             this.transitionCallbacks,
@@ -387,4 +388,7 @@ export class StaterStateMachineBuilder<T extends string, C extends Context> {
             this.contextJsonAdapter
         );
     }
+}
+
+export class EmptyContext {
 }
