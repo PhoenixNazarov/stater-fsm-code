@@ -47,8 +47,8 @@ class Transition(BaseModel, Generic[T, C]):
     name: str
     start: T
     end: T
-    condition: Callable[[C], bool] | None = Field(None, exclude=True)
-    event: Event[C] | None = Field(None, exclude=True)
+    condition: Optional[Callable[[C], bool], None] = Field(None, exclude=True)
+    event: Optional[Event[C], None] = Field(None, exclude=True)
 
 
 class JsonSchema(BaseModel, Generic[T]):
@@ -79,7 +79,7 @@ class StaterStateMachine(Generic[T, C]):
             state_callbacks: Optional[Dict[T, List[Callable[[C], None]]]] = None,
             state_all_callbacks: Optional[List[Callable[[T, C], None]]] = None,
             context_json_adapter: Optional['ContextJsonAdapter[C]'] = None,
-            state: T | None = None,
+            state: Optional[T] = None,
     ):
         self.__transitions = transitions
         if states is None:
@@ -199,16 +199,16 @@ StateMachineFactory = Callable[[
     list[NameEvent[C]],
     dict[T, list[Event[C]]],
     list[StateEvent[T, C]],
-    ContextJsonAdapter[C] | None
+    Optional[ContextJsonAdapter[C]]
 ], StaterStateMachine[T, C]]
 
 
 class StaterStateMachineBuilder(Generic[T, C]):
     def __init__(self):
         self.__transitions: Dict[str, Transition[T, C]] = {}
-        self.__state: T = None
+        self.__state: Optional[T] = None
         self.__states: Set[T] = set()
-        self.__context: C | None = None
+        self.__context: Optional[C] = None
         self.__transition_middlewares: dict[str, list[TransitionMiddleware[C]]] = {}
         self.__transition_all_middlewares: list[TransitionNameMiddleware[C]] = []
         self.__transition_callbacks: dict[str, list[Event[C]]] = {}
@@ -244,7 +244,7 @@ class StaterStateMachineBuilder(Generic[T, C]):
             )
 
         self.__factory: StateMachineFactory[T, C] = default_factory
-        self.__context_json_adapter: ContextJsonAdapter[C] | None = None
+        self.__context_json_adapter: Optional[ContextJsonAdapter[C]] = None
 
     def add_transition(self, name: str, start: T, end: T, condition: Optional[Callable[[C], bool]] = None,
                        event: Optional[Callable[[C], None]] = None):
