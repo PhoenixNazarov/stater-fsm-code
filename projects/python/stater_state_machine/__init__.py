@@ -165,7 +165,7 @@ class StaterStateMachine(Generic[T, C]):
                 pass
 
     def to_json_schema(self) -> str:
-        return JsonSchema(states=list(self.__states), start_state=self.__start_state,
+        return JsonSchema(states=sorted(list(self.__states)), start_state=self.__start_state,
                           transitions=self.__transitions).json()
 
     def to_json(self) -> str:
