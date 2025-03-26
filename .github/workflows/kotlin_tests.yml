@@ -34,15 +34,16 @@ jobs:
       - name: Run tests with coverage
         run: |
           cd projects/kotlin
-          ./gradlew test jacocoTestReport
+          ./gradlew test jacocoTestReport --console=plain
 
-      - name: Show test results
+      - name: Show test results in console
         run: |
-          cat projects/kotlin/build/reports/tests/test/index.html || true
+          cat projects/kotlin/build/test-results/test/TEST-*.xml || true
 
-      - name: Show coverage report
+      - name: Show coverage summary in console
         run: |
-          cat projects/kotlin/build/reports/jacoco/test/html/index.html || true
+          cd projects/kotlin
+          ./gradlew jacocoTestCoverageVerification --console=plain || true
 
       - name: Create JAR
         run: |
