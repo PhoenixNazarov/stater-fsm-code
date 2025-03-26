@@ -73,33 +73,7 @@ class TypesDoorStateMachine extends StaterStateMachine {
 }
 
 
-const typedDoorFactory = (
-    transitionsA,
-    startStateA,
-    statesA,
-    contextA,
-    transitionMiddlewaresA,
-    transitionAllMiddlewaresA,
-    transitionCallbacksA,
-    transitionAllCallbacksA,
-    stateCallbacksA,
-    stateAllCallbacksA,
-    contextJsonAdapterA
-) => {
-    return new TypesDoorStateMachine(
-        transitionsA,
-        startStateA,
-        statesA,
-        contextA,
-        transitionMiddlewaresA,
-        transitionAllMiddlewaresA,
-        transitionCallbacksA,
-        transitionAllCallbacksA,
-        stateCallbacksA,
-        stateAllCallbacksA,
-        contextJsonAdapterA
-    );
-};
+const typedDoorFactory = (...args) => new TypesDoorStateMachine(...args);
 
 
 function testDoor(door) {
