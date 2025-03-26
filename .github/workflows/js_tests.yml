@@ -2,7 +2,11 @@ name: JavaScript Tests
 
 on:
   push:
+    paths:
+      - 'projects/js/**'
   pull_request:
+    paths:
+      - 'projects/js/**'
 
 jobs:
   test:

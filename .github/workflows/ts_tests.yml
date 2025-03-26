@@ -2,7 +2,11 @@ name: TypeScript Tests
 
 on:
   push:
+    paths:
+      - 'projects/ts/**'
   pull_request:
+    paths:
+      - 'projects/ts/**'
 
 jobs:
   test:
