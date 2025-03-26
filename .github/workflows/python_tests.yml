@@ -1,12 +1,12 @@
-name: Python Tests
+name: Kotlin Tests
 
 on:
   push:
-#    paths:
-#      - 'projects/python/**'
+    paths:
+      - 'projects/python/**'
   pull_request:
-#    paths:
-#      - 'projects/python/**'
+    paths:
+      - 'projects/python/**'
 
 jobs:
   test:

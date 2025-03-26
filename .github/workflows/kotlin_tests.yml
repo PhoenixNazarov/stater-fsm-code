@@ -1,0 +1,57 @@
+name: Python Tests
+
+on:
+  push:
+  #    paths:
+  #      - 'projects/python/**'
+  pull_request:
+#    paths:
+#      - 'projects/python/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java-version: [ '17', '21' ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: ${{ matrix.java-version }}
+          cache: 'gradle'
+
+      - name: Grant execute permission for Gradle
+        run: chmod +x gradlew
+
+      - name: Build project
+        run: ./gradlew build --no-daemon
+
+      - name: Run tests with coverage
+        run: ./gradlew test jacocoTestReport --no-daemon
+
+      - name: Show test results in console
+        run: cat build/test-results/test/*.xml || echo "No test results found"
+
+      - name: Show coverage report in console
+        run: cat build/reports/jacoco/test/jacocoTestReport.xml || echo "No coverage report found"
+
+      - name: Create JAR
+        run: ./gradlew jar --no-daemon
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: build/test-results/test/
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: build/reports/jacoco/test/
