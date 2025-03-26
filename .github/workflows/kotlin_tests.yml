@@ -38,11 +38,11 @@ jobs:
 
       - name: Show test results
         run: |
-          cat projects/kotlin/build/reports/tests/test/index.html || true  # Покажем результаты тестов
+          cat projects/kotlin/build/reports/tests/test/index.html || true
 
       - name: Show coverage report
         run: |
-          cat projects/kotlin/build/reports/jacoco/test/html/index.html || true  # Покажем покрытие кода
+          cat projects/kotlin/build/reports/jacoco/test/html/index.html || true
 
       - name: Create JAR
         run: |
