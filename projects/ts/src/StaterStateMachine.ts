@@ -51,12 +51,12 @@ export abstract class StaterStateMachine<T, C extends Context> {
     private transitionsGroupedStart: Map<T, Transition<T, C>[]>;
     private transitionsByName: Map<string, Transition<T, C>>;
     private transitionMiddlewares: Map<string, TransitionMiddleware<C>[]>;
-    private transitionAllMiddlewares: TransitionNameMiddleware<C>[];
+    private readonly transitionAllMiddlewares: TransitionNameMiddleware<C>[];
     private transitionCallbacks: Map<string, FSMEvent<C>[]>;
     private transitionAllCallbacks: NameFSMEvent<C>[];
     private stateCallbacks: Map<T, FSMEvent<C>[]>;
     private stateAllCallbacks: StateFSMEvent<T, C>[];
-    private contextJsonAdapter?: ContextJsonAdapter<C>;
+    private readonly contextJsonAdapter?: ContextJsonAdapter<C>;
     private _enableEvents: boolean;
 
     constructor(

@@ -1,4 +1,5 @@
-import org.example.*
+package com.stater.statemachine.kotlin
+
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

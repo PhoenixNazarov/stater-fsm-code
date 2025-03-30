@@ -1,8 +1,10 @@
-package org.example
+package com.stater.statemachine.kotlin
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import java.text.Collator
+import java.util.*
 
 
 interface Context
@@ -70,6 +72,7 @@ abstract class StaterStateMachine<T, C : Context>(
     private val stateCallbacks: Map<T, List<Event<C>>> = mapOf(),
     private val stateAllCallbacks: List<StateEvent<T, C>> = listOf(),
     private var contextJsonAdapter: ContextJsonAdapter<C>? = null,
+    private var enableEvents_: Boolean = true,
 ) {
     fun getState(): T = state
     fun getContext(): C = context
@@ -77,10 +80,11 @@ abstract class StaterStateMachine<T, C : Context>(
     fun transition(name: String) {
         val transition = transitionsByName[name] ?: error("Transition not found: $name")
 
+        if (state != transition.start) {
+            error("Start state does not match transition's start state: ${transition.start}")
+        }
+
         fun conditionHandler() {
-            if (state != transition.start) {
-                error("Start state does not match transition's start state: ${transition.start}")
-            }
             transition.condition?.let {
                 if (!it(context)) {
                     error("Condition return false for transition $name")
@@ -108,9 +112,11 @@ abstract class StaterStateMachine<T, C : Context>(
             }
         }
 
-        next(name, context)
+        if (enableEvents_)
+            next(name, context)
 
         state = transition.end
+        if (!enableEvents_) return
         transition.event?.let { it(context) }
 
         transitionAllCallbacks.forEach { it(name, context) }
@@ -129,11 +135,18 @@ abstract class StaterStateMachine<T, C : Context>(
         }
     }
 
-    fun toJsonSchema() = jacksonObjectMapper().writeValueAsString(
-        JsonSchema(
-            states = states.toList(), startState = startState, transitions = transitions
-        )
-    ) ?: error("Cant serialize")
+    fun toJsonSchema(): String {
+        val collator = Collator.getInstance(Locale.getDefault()).apply {
+            strength = Collator.PRIMARY
+        }
+        return jacksonObjectMapper().writeValueAsString(
+            JsonSchema(
+                states = states.toList().sortedWith { a, b -> collator.compare(a.toString(), b.toString()) },
+                startState = startState,
+                transitions = transitions
+            )
+        ) ?: error("Cant serialize")
+    }
 
     fun toJson() = jacksonObjectMapper().writeValueAsString(
         JsonState(
@@ -146,6 +159,14 @@ abstract class StaterStateMachine<T, C : Context>(
             this.state = stateConverter(it.state.toString())
             this.context = contextJsonAdapter!!.fromJson(it.context)
         }
+
+    fun enableEvents() {
+        enableEvents_ = true
+    }
+
+    fun disableEvents() {
+        enableEvents_ = false
+    }
 }
 
 
