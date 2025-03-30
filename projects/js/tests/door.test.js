@@ -21,9 +21,9 @@ let buildDoorDSMContext = () => {
 class TypesDoorStateMachine extends StaterStateMachine {
     constructor(
         transitions,
+        context,
         startState,
         states,
-        context,
         transitionMiddlewares = new Map(),
         transitionAllMiddlewares = [],
         transitionCallbacks = new Map(),
@@ -34,9 +34,9 @@ class TypesDoorStateMachine extends StaterStateMachine {
     ) {
         super(
             transitions,
+            context,
             startState,
             states,
-            context,
             transitionMiddlewares,
             transitionAllMiddlewares,
             transitionCallbacks,
@@ -189,9 +189,9 @@ test('testSimpleBuild', () => {
                 }
             }
         ],
+        buildDoorDSMContext(),
         States.OPEN,
         [States.OPEN, States.CLOSE, States.AJAR],
-        buildDoorDSMContext(),
     );
 
     testDoor(doorFSM);

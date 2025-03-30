@@ -13,11 +13,20 @@ export class StaterStateMachine {
     startState;
     states;
     context;
+    _enableEvents;
 
-    constructor(transitions, startState, states, context, transitionMiddlewares = new Map(), transitionAllMiddlewares = [], transitionCallbacks = new Map(), transitionAllCallbacks = [], stateCallbacks = new Map(), stateAllCallbacks = [], contextJsonAdapter, state = startState) {
+    constructor(transitions, context, startState, states = undefined, transitionMiddlewares = new Map(), transitionAllMiddlewares = [], transitionCallbacks = new Map(), transitionAllCallbacks = [], stateCallbacks = new Map(), stateAllCallbacks = [], contextJsonAdapter, state = startState) {
         this.transitions = transitions
         this.startState = startState
-        this.states = states
+        if (states) {
+            this.states = states
+        } else {
+            this.states = new Set()
+            this.transitions.forEach(el => {
+                this.states.add(el.start)
+                this.states.add(el.end)
+            })
+        }
         this.context = context
         this.state = state;
         this.transitionsGroupedStart = new Map();
@@ -38,6 +47,7 @@ export class StaterStateMachine {
         this.stateCallbacks = stateCallbacks;
         this.stateAllCallbacks = stateAllCallbacks;
         this.contextJsonAdapter = contextJsonAdapter;
+        this._enableEvents = true;
     }
 
     getState() {
@@ -54,10 +64,11 @@ export class StaterStateMachine {
             throw new Error(`Transition not found: ${name}`);
         }
 
+        if (this.state !== transition.start) {
+            throw new Error(`Start state does not match transition's start state: ${transition.start}`);
+        }
+
         const conditionHandler = () => {
-            if (this.state !== transition.start) {
-                throw new Error(`Start state does not match transition's start state: ${transition.start}`);
-            }
             if (transition.condition && !transition.condition(this.context)) {
                 throw new Error(`Condition return false for transition ${name}`);
             }
@@ -83,9 +94,16 @@ export class StaterStateMachine {
             }
         }
 
-        next(name, this.context);
+        if (this._enableEvents) {
+            next(name, this.context);
+        }
 
         this.state = transition.end;
+
+        if (!this._enableEvents) {
+            return
+        }
+
         if (transition.event) {
             transition.event(this.context);
         }
@@ -109,7 +127,7 @@ export class StaterStateMachine {
 
     toJsonSchema() {
         return JSON.stringify({
-            states: this.states, startState: this.startState, transitions: this.transitions
+            states: [...this.states].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" })), startState: this.startState, transitions: this.transitions
         });
     }
 
@@ -128,6 +146,14 @@ export class StaterStateMachine {
         if (this.contextJsonAdapter) {
             this.context = this.contextJsonAdapter.fromJson(jsonState.context);
         }
+    }
+
+    disableEvents() {
+        this._enableEvents = false
+    }
+
+    enableEvents() {
+        this._enableEvents = true
     }
 }
 
@@ -259,6 +285,6 @@ export class StaterStateMachineBuilder {
             throw new Error("Start state and context must be set");
         }
 
-        return this.factory(Array.from(this.transitions.values()), this.state, this.states, this.context, this.transitionMiddlewares, this.transitionAllMiddlewares, this.transitionCallbacks, this.transitionAllCallbacks, this.stateCallbacks, this.stateAllCallbacks, this.contextJsonAdapter);
+        return this.factory(Array.from(this.transitions.values()), this.context, this.state, this.states, this.transitionMiddlewares, this.transitionAllMiddlewares, this.transitionCallbacks, this.transitionAllCallbacks, this.stateCallbacks, this.stateAllCallbacks, this.contextJsonAdapter);
     }
 }
