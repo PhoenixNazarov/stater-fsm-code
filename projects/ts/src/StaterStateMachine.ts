@@ -57,6 +57,7 @@ export abstract class StaterStateMachine<T, C extends Context> {
     private stateCallbacks: Map<T, FSMEvent<C>[]>;
     private stateAllCallbacks: StateFSMEvent<T, C>[];
     private contextJsonAdapter?: ContextJsonAdapter<C>;
+    private _enableEvents: boolean;
 
     constructor(
         private transitions: Transition<T, C>[],
@@ -91,6 +92,7 @@ export abstract class StaterStateMachine<T, C extends Context> {
         this.stateCallbacks = stateCallbacks;
         this.stateAllCallbacks = stateAllCallbacks;
         this.contextJsonAdapter = contextJsonAdapter;
+        this._enableEvents = true;
     }
 
     public getState(): T {
@@ -107,10 +109,11 @@ export abstract class StaterStateMachine<T, C extends Context> {
             throw new Error(`Transition not found: ${name}`);
         }
 
+        if (this.state !== transition.start) {
+            throw new Error(`Start state does not match transition's start state: ${transition.start}`);
+        }
+
         const conditionHandler = () => {
-            if (this.state !== transition.start) {
-                throw new Error(`Start state does not match transition's start state: ${transition.start}`);
-            }
             if (transition.condition && !transition.condition(this.context)) {
                 throw new Error(`Condition return false for transition ${name}`);
             }
@@ -135,10 +138,16 @@ export abstract class StaterStateMachine<T, C extends Context> {
                 internalNext(context);
             }
         };
-
-        next(name, this.context);
+        if (this._enableEvents) {
+            next(name, this.context);
+        }
 
         this.state = transition.end;
+
+        if (!this._enableEvents) {
+            return
+        }
+
         if (transition.event) {
             transition.event(this.context);
         }
@@ -162,7 +171,7 @@ export abstract class StaterStateMachine<T, C extends Context> {
 
     public toJsonSchema(): string {
         const jsonSchema = {
-            states: [...this.states],
+            states: [...this.states].sort((a, b) => String(a).localeCompare(String(b), undefined, {sensitivity: "base"})),
             startState: this.startState,
             transitions: this.transitions
         }
@@ -185,6 +194,14 @@ export abstract class StaterStateMachine<T, C extends Context> {
         if (this.contextJsonAdapter) {
             this.context = this.contextJsonAdapter.fromJson(jsonState.context);
         }
+    }
+
+    public disableEvents() {
+        this._enableEvents = false
+    }
+
+    public enableEvents() {
+        this._enableEvents = true
     }
 }
 
