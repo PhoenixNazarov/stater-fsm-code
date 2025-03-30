@@ -53,7 +53,7 @@ class Transition(BaseModel, Generic[T, C]):
 
 class JsonSchema(BaseModel, Generic[T]):
     states: List[T]
-    start_state: T
+    startState: T
     transitions: List[Transition[T, C]]
 
     class Config:
@@ -103,6 +103,7 @@ class StaterStateMachine(Generic[T, C]):
         self.__state_callbacks = state_callbacks or {}
         self.__state_all_callbacks = state_all_callbacks or []
         self.__context_json_adapter = context_json_adapter
+        self.__enable_events = True
 
     def get_state(self) -> T:
         return self.__state
@@ -115,9 +116,10 @@ class StaterStateMachine(Generic[T, C]):
         if not transition:
             raise ValueError(f"Transition not found: {name}")
 
+        if self.__state != transition.start:
+            raise ValueError(f"Start state does not match transition's start state: {transition.start}")
+
         def condition_handler():
-            if self.__state != transition.start:
-                raise ValueError(f"Start state does not match transition's start state: {transition.start}")
             if transition.condition and not transition.condition(self.__context):
                 raise ValueError(f"Condition returned false for transition {name}")
 
@@ -141,9 +143,13 @@ class StaterStateMachine(Generic[T, C]):
             else:
                 return internal_next(context)
 
-        next(name, self.__context)
+        if self.__enable_events:
+            next(name, self.__context)
 
         self.__state = transition.end
+
+        if not self.__enable_events:
+            return
         if transition.event:
             transition.event(self.__context)
 
@@ -166,8 +172,8 @@ class StaterStateMachine(Generic[T, C]):
 
     def to_json_schema(self) -> str:
         return JsonSchema(
-            states=sorted(list(self.__states), key=lambda i: str(i)),
-            start_state=self.__start_state,
+            states=sorted(list(self.__states), key=lambda i: str(i).casefold()),
+            startState=self.__start_state,
             transitions=self.__transitions
         ).json()
 
@@ -185,6 +191,12 @@ class StaterStateMachine(Generic[T, C]):
         data = JsonState.parse_raw(json_str)
         self.__state = state_converter(data.state)
         self.__context = self.__context_json_adapter.from_json(data.context)
+
+    def disable_events(self):
+        self.__enable_events = False
+
+    def enable_events(self):
+        self.__enable_events = True
 
 
 class BaseFSM(Generic[T, C], StaterStateMachine[T, C]):
@@ -315,7 +327,7 @@ class StaterStateMachineBuilder(Generic[T, C]):
                 state_converter(transition['start']),
                 state_converter(transition['end'])
             )
-        self.set_start_state(state_converter(data['start_state']))
+        self.set_start_state(state_converter(data['startState']))
         return self
 
     def set_factory(self, factory: Callable[..., 'StaterStateMachine[T, C]']):
