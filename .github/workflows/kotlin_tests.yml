@@ -2,8 +2,8 @@ name: Kotlin Tests
 
 on:
   push:
-      paths:
-        - 'projects/kotlin/**'
+    paths:
+      - 'projects/kotlin/**'
   pull_request:
     paths:
       - 'projects/kotlin/**'
