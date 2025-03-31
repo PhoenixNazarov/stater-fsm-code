@@ -176,7 +176,7 @@ test('testSimpleBuild', () => {
                 name: "close",
                 start: States.AJAR,
                 end: States.CLOSE,
-                condition: (context: DoorFSMContext) => context.degreeOfOpening <= 1,
+                condition: (ctx) => ctx.degreeOfOpening <= 1,
                 event: (context: DoorFSMContext) => {
                     context.degreeOfOpening = 0;
                 }

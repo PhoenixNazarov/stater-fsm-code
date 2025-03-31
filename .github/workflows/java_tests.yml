@@ -1,0 +1,51 @@
+name: Kotlin Tests
+
+on:
+  push:
+    paths:
+      - 'projects/java/**'
+  pull_request:
+    paths:
+      - 'projects/java/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java-version: [ '17', '21' ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: ${{ matrix.java-version }}
+          cache: 'maven'
+
+      - name: Build project
+        run: |
+          cd projects/java
+          mvn clean install -B
+
+      - name: Run tests with coverage
+        run: |
+          cd projects/java
+          mvn test jacoco:report
+
+      - name: Show test results in console
+        run: |
+          cat projects/java/target/surefire-reports/*.txt || true
+
+      - name: Show coverage summary in console
+        run: |
+          cd projects/java
+          mvn jacoco:check || true
+
+      - name: Create JAR
+        run: |
+          cd projects/java
+          mvn package
