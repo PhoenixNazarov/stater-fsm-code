@@ -29,9 +29,9 @@ jobs:
       - name: Run tests with coverage
         run: |
           cd projects/java
-          mvn clean verify
+          mvn clean verify -P java${{ matrix.java-version }}
 
       - name: Create JAR
         run: |
           cd projects/java
-          mvn clean package
+          mvn clean package -P java${{ matrix.java-version }}
