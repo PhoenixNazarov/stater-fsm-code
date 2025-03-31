@@ -1,4 +1,4 @@
-name: Kotlin Tests
+name: Java Tests
 
 on:
   push:
@@ -26,26 +26,12 @@ jobs:
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
 
-      - name: Build project
-        run: |
-          cd projects/java
-          mvn clean install -B
-
       - name: Run tests with coverage
         run: |
           cd projects/java
-          mvn test jacoco:report
-
-      - name: Show test results in console
-        run: |
-          cat projects/java/target/surefire-reports/*.txt || true
-
-      - name: Show coverage summary in console
-        run: |
-          cd projects/java
-          mvn jacoco:check || true
+          mvn clean verify
 
       - name: Create JAR
         run: |
           cd projects/java
-          mvn package
+          mvn clean package
