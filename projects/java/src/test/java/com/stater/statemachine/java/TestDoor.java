@@ -63,7 +63,6 @@ public class TestDoor {
         public void close() {
             transition("close");
         }
-
     }
 
     private final StateMachineFactory<States, DoorFSMContext> typedDoorFactory = TypesDoorStateMachine::new;

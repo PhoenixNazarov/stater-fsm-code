@@ -2,46 +2,44 @@
 
 namespace Stater.StateMachine.Lib;
 
-public interface IContext
-{
-}
+public interface IContext;
 
 public class EmptyContext : IContext;
 
-public interface IContextJsonAdapter<C> where C : IContext
+public interface IContextJsonAdapter<TC> where TC : IContext
 {
-    string ToJson(C context);
-    C FromJson(string json);
+    string ToJson(TC context);
+    TC FromJson(string json);
 }
 
-public delegate void Event<C>(C context) where C : IContext;
+public delegate void Event<in TC>(TC context) where TC : IContext;
 
-public delegate void NameEvent<C>(string name, C context) where C : IContext;
+public delegate void NameEvent<in TC>(string name, TC context) where TC : IContext;
 
-public delegate void StateEvent<T, C>(T state, C context) where C : IContext;
+public delegate void StateEvent<T, in TC>(T state, TC context) where TC : IContext;
 
-public delegate void TransitionMiddleware<C>(C context, Action<C> next) where C : IContext;
+public delegate void TransitionMiddleware<TC>(TC context, Action<TC> next) where TC : IContext;
 
-public delegate void TransitionNameMiddleware<C>(string name, C context, Action<string, C> next) where C : IContext;
+public delegate void TransitionNameMiddleware<TC>(string name, TC context, Action<string, TC> next) where TC : IContext;
 
-public delegate StaterStateMachine<T, C> StateMachineFactory<T, C>(List<Transition<T, C>> transitions, C context,
-    T startState, HashSet<T> states, Dictionary<String, List<TransitionMiddleware<C>>> transitionMiddlewares,
-    List<TransitionNameMiddleware<C>> transitionAllMiddlewares, Dictionary<String, List<Event<C>>> transitionCallbacks,
-    List<NameEvent<C>> transitionAllCallbacks, Dictionary<T, List<Event<C>>> stateCallbacks,
-    List<StateEvent<T, C>> stateAllCallbacks, IContextJsonAdapter<C> contextJsonAdapter) where C : IContext;
+public delegate StaterStateMachine<T, TC> StateMachineFactory<T, TC>(List<Transition<T, TC>> transitions, TC context,
+    T startState, HashSet<T> states, Dictionary<String, List<TransitionMiddleware<TC>>> transitionMiddlewares,
+    List<TransitionNameMiddleware<TC>> transitionAllMiddlewares, Dictionary<string, List<Event<TC>>> transitionCallbacks,
+    List<NameEvent<TC>> transitionAllCallbacks, Dictionary<T, List<Event<TC>>> stateCallbacks,
+    List<StateEvent<T, TC>> stateAllCallbacks, IContextJsonAdapter<TC> contextJsonAdapter) where TC : IContext where T : notnull;
 
-public class Transition<T, C>(string name, T start, T end, Predicate<C>? condition = null, Event<C>? eEvent = null)
-    where C : IContext
+public class Transition<T, TC>(string name, T start, T end, Predicate<TC>? condition = null, Event<TC>? eEvent = null)
+    where TC : IContext
 {
     public string Name { get; } = name;
     public T Start { get; } = start;
     public T End { get; } = end;
 
     [System.Text.Json.Serialization.JsonIgnore]
-    public Predicate<C>? Condition { get; } = condition;
+    public Predicate<TC>? Condition { get; } = condition;
 
     [System.Text.Json.Serialization.JsonIgnore]
-    public Event<C>? Event { get; } = eEvent;
+    public Event<TC>? Event { get; } = eEvent;
 }
 
 public class JsonSchema<T>
@@ -65,30 +63,30 @@ public class JsonState<T>(
     public string Context { get; } = context;
 }
 
-public abstract class StaterStateMachine<T, C> where C : IContext
+public abstract class StaterStateMachine<T, TC> where TC : IContext where T : notnull
 {
-    private C _context;
+    private TC _context;
     private readonly T _startState;
     private readonly HashSet<T> _states;
     private T _state;
-    private readonly List<Transition<T, C>> _transitions;
-    private readonly Dictionary<T, List<Transition<T, C>>> _transitionsGroupedStart = new();
-    private readonly Dictionary<string, Transition<T, C>> _transitionsByName = new();
-    private readonly Dictionary<string, List<TransitionMiddleware<C>>> _transitionMiddlewares = new();
-    private readonly List<TransitionNameMiddleware<C>> _transitionAllMiddlewares = new();
-    private readonly Dictionary<string, List<Event<C>>> _transitionCallbacks = new();
-    private readonly List<NameEvent<C>> _transitionAllCallbacks = new();
-    private readonly Dictionary<T, List<Event<C>>> _stateCallbacks = new();
-    private readonly List<StateEvent<T, C>> _stateAllCallbacks = new();
-    private readonly IContextJsonAdapter<C> _contextJsonAdapter;
+    private readonly List<Transition<T, TC>> _transitions;
+    private readonly Dictionary<T, List<Transition<T, TC>>> _transitionsGroupedStart = new();
+    private readonly Dictionary<string, Transition<T, TC>> _transitionsByName = new();
+    private readonly Dictionary<string, List<TransitionMiddleware<TC>>> _transitionMiddlewares = new();
+    private readonly List<TransitionNameMiddleware<TC>> _transitionAllMiddlewares = new();
+    private readonly Dictionary<string, List<Event<TC>>> _transitionCallbacks = new();
+    private readonly List<NameEvent<TC>> _transitionAllCallbacks = new();
+    private readonly Dictionary<T, List<Event<TC>>> _stateCallbacks = new();
+    private readonly List<StateEvent<T, TC>> _stateAllCallbacks = new();
+    private readonly IContextJsonAdapter<TC> _contextJsonAdapter;
     private bool _enableEvents = true;
 
-    public StaterStateMachine(List<Transition<T, C>> transitions, C context, T startState, HashSet<T> states,
-        Dictionary<string, List<TransitionMiddleware<C>>> transitionMiddlewares,
-        List<TransitionNameMiddleware<C>> transitionAllMiddlewares,
-        Dictionary<string, List<Event<C>>> transitionCallbacks, List<NameEvent<C>> transitionAllCallbacks,
-        Dictionary<T, List<Event<C>>> stateCallbacks, List<StateEvent<T, C>> stateAllCallbacks,
-        IContextJsonAdapter<C> contextJsonAdapter)
+    public StaterStateMachine(List<Transition<T, TC>> transitions, TC context, T startState, HashSet<T> states,
+        Dictionary<string, List<TransitionMiddleware<TC>>> transitionMiddlewares,
+        List<TransitionNameMiddleware<TC>> transitionAllMiddlewares,
+        Dictionary<string, List<Event<TC>>> transitionCallbacks, List<NameEvent<TC>> transitionAllCallbacks,
+        Dictionary<T, List<Event<TC>>> stateCallbacks, List<StateEvent<T, TC>> stateAllCallbacks,
+        IContextJsonAdapter<TC> contextJsonAdapter)
     {
         _transitions = transitions;
         _context = context;
@@ -106,13 +104,13 @@ public abstract class StaterStateMachine<T, C> where C : IContext
         foreach (var transition in transitions)
         {
             if (!_transitionsGroupedStart.ContainsKey(transition.Start))
-                _transitionsGroupedStart[transition.Start] = new List<Transition<T, C>>();
+                _transitionsGroupedStart[transition.Start] = new List<Transition<T, TC>>();
             _transitionsGroupedStart[transition.Start].Add(transition);
             _transitionsByName[transition.Name] = transition;
         }
     }
 
-    public StaterStateMachine(List<Transition<T, C>> transitions, C context, T startState)
+    public StaterStateMachine(List<Transition<T, TC>> transitions, TC context, T startState)
     {
         _transitions = transitions;
         _context = context;
@@ -123,14 +121,14 @@ public abstract class StaterStateMachine<T, C> where C : IContext
         foreach (var transition in transitions)
         {
             if (!_transitionsGroupedStart.ContainsKey(transition.Start))
-                _transitionsGroupedStart[transition.Start] = new List<Transition<T, C>>();
+                _transitionsGroupedStart[transition.Start] = new List<Transition<T, TC>>();
             _transitionsGroupedStart[transition.Start].Add(transition);
             _transitionsByName[transition.Name] = transition;
         }
     }
 
     public T GetState() => _state;
-    public C GetContext() => _context;
+    public TC GetContext() => _context;
 
     public void Transition(string name)
     {
@@ -152,7 +150,7 @@ public abstract class StaterStateMachine<T, C> where C : IContext
 
         var middlewareEnumerator = _transitionMiddlewares.TryGetValue(name, out var middlewares)
             ? middlewares.GetEnumerator()
-            : Enumerable.Empty<TransitionMiddleware<C>>().GetEnumerator();
+            : Enumerable.Empty<TransitionMiddleware<TC>>().GetEnumerator();
 
         var allMiddlewareEnumerator = _transitionAllMiddlewares.GetEnumerator();
 
@@ -179,7 +177,7 @@ public abstract class StaterStateMachine<T, C> where C : IContext
             evt(_state, _context);
         return;
 
-        void InternalNext(C ctx)
+        void InternalNext(TC ctx)
         {
             if (middlewareEnumerator.MoveNext())
                 middlewareEnumerator.Current(ctx, InternalNext);
@@ -187,7 +185,7 @@ public abstract class StaterStateMachine<T, C> where C : IContext
                 ConditionHandler();
         }
 
-        void Next(string transitionName, C ctx)
+        void Next(string transitionName, TC ctx)
         {
             if (allMiddlewareEnumerator.MoveNext())
                 allMiddlewareEnumerator.Current(transitionName, ctx, Next);
@@ -274,120 +272,120 @@ internal class BaseFsm<T, C> : StaterStateMachine<T, C> where C : IContext
     }
 }
 
-public class StaterStateMachineBuilder<T, C> where C : IContext
+public class StaterStateMachineBuilder<T, TC> where TC : IContext
 {
-    private readonly Dictionary<string, Transition<T, C>> transitions = new();
-    private T state;
-    private readonly HashSet<T> states = new();
-    private C context;
+    private readonly Dictionary<string, Transition<T, TC>> _transitions = new();
+    private T _state;
+    private readonly HashSet<T> _states = new();
+    private TC _context;
 
-    private readonly Dictionary<string, List<TransitionMiddleware<C>>> transitionMiddlewares = new();
-    private readonly List<TransitionNameMiddleware<C>> transitionAllMiddlewares = new();
+    private readonly Dictionary<string, List<TransitionMiddleware<TC>>> _transitionMiddlewares = new();
+    private readonly List<TransitionNameMiddleware<TC>> _transitionAllMiddlewares = new();
 
-    private readonly Dictionary<string, List<Event<C>>> transitionCallbacks = new();
-    private readonly List<NameEvent<C>> transitionAllCallbacks = new();
+    private readonly Dictionary<string, List<Event<TC>>> _transitionCallbacks = new();
+    private readonly List<NameEvent<TC>> _transitionAllCallbacks = new();
 
-    private readonly Dictionary<T, List<Event<C>>> stateCallbacks = new();
-    private readonly List<StateEvent<T, C>> stateAllCallbacks = new();
-    private IContextJsonAdapter<C> contextJsonAdapter;
+    private readonly Dictionary<T, List<Event<TC>>> _stateCallbacks = new();
+    private readonly List<StateEvent<T, TC>> _stateAllCallbacks = new();
+    private IContextJsonAdapter<TC> _contextJsonAdapter;
 
-    private StateMachineFactory<T, C> factory =
+    private StateMachineFactory<T, TC> _factory =
     (transitions, context, state, states, middlewares, allMiddlewares, callbacks, allCallbacks, stateCallbacks,
-        stateAllCallbacks, adapter) => new BaseFsm<T, C>(transitions, context, state, states, middlewares,
+        stateAllCallbacks, adapter) => new BaseFsm<T, TC>(transitions, context, state, states, middlewares,
         allMiddlewares, callbacks, allCallbacks, stateCallbacks, stateAllCallbacks, adapter);
 
-    public StaterStateMachineBuilder<T, C> AddTransition(string name, T start, T end, Predicate<C> condition,
-        Event<C> action)
+    public StaterStateMachineBuilder<T, TC> AddTransition(string name, T start, T end, Predicate<TC> condition,
+        Event<TC> action)
     {
-        states.Add(start);
-        states.Add(end);
-        transitions[name] = new Transition<T, C>(name, start, end, condition, action);
+        _states.Add(start);
+        _states.Add(end);
+        _transitions[name] = new Transition<T, TC>(name, start, end, condition, action);
         return this;
     }
 
-    public StaterStateMachineBuilder<T, C> AddTransition(string name, T start, T end, Predicate<C> condition) =>
+    public StaterStateMachineBuilder<T, TC> AddTransition(string name, T start, T end, Predicate<TC> condition) =>
         AddTransition(name, start, end, condition, _ => { });
 
-    public StaterStateMachineBuilder<T, C> AddTransition(string name, T start, T end, Event<C> eEvent) =>
+    public StaterStateMachineBuilder<T, TC> AddTransition(string name, T start, T end, Event<TC> eEvent) =>
         AddTransition(name, start, end, _ => true, eEvent);
 
-    public StaterStateMachineBuilder<T, C> AddTransition(string name, T start, T end) =>
+    public StaterStateMachineBuilder<T, TC> AddTransition(string name, T start, T end) =>
         AddTransition(name, start, end, _ => true, _ => { });
 
-    public StaterStateMachineBuilder<T, C> AddState(T state)
+    public StaterStateMachineBuilder<T, TC> AddState(T state)
     {
-        states.Add(state);
+        _states.Add(state);
         return this;
     }
 
-    public StaterStateMachineBuilder<T, C> SetTransitionCondition(string name, Predicate<C> condition)
+    public StaterStateMachineBuilder<T, TC> SetTransitionCondition(string name, Predicate<TC> condition)
     {
-        if (!transitions.ContainsKey(name)) throw new InvalidOperationException($"Transition not found: {name}");
-        var transition = transitions[name];
-        transitions[name] = new Transition<T, C>(name, transition.Start, transition.End, condition, transition.Event);
+        if (!_transitions.ContainsKey(name)) throw new InvalidOperationException($"Transition not found: {name}");
+        var transition = _transitions[name];
+        _transitions[name] = new Transition<T, TC>(name, transition.Start, transition.End, condition, transition.Event);
         return this;
     }
 
-    public StaterStateMachineBuilder<T, C> SetTransitionEvent(string name, Event<C> eEvent)
+    public StaterStateMachineBuilder<T, TC> SetTransitionEvent(string name, Event<TC> eEvent)
     {
-        if (!transitions.ContainsKey(name)) throw new InvalidOperationException($"Transition not found: {name}");
-        var transition = transitions[name];
-        transitions[name] = new Transition<T, C>(name, transition.Start, transition.End, transition.Condition, eEvent);
+        if (!_transitions.ContainsKey(name)) throw new InvalidOperationException($"Transition not found: {name}");
+        var transition = _transitions[name];
+        _transitions[name] = new Transition<T, TC>(name, transition.Start, transition.End, transition.Condition, eEvent);
         return this;
     }
 
-    public StaterStateMachineBuilder<T, C> TransitionMiddleware(string name, TransitionMiddleware<C> middleware)
+    public StaterStateMachineBuilder<T, TC> TransitionMiddleware(string name, TransitionMiddleware<TC> middleware)
     {
-        if (!transitionMiddlewares.ContainsKey(name)) transitionMiddlewares[name] = new List<TransitionMiddleware<C>>();
-        transitionMiddlewares[name].Add(middleware);
+        if (!_transitionMiddlewares.ContainsKey(name)) _transitionMiddlewares[name] = new List<TransitionMiddleware<TC>>();
+        _transitionMiddlewares[name].Add(middleware);
         return this;
     }
 
-    public StaterStateMachineBuilder<T, C> TransitionAllMiddleware(TransitionNameMiddleware<C> middleware)
+    public StaterStateMachineBuilder<T, TC> TransitionAllMiddleware(TransitionNameMiddleware<TC> middleware)
     {
-        transitionAllMiddlewares.Add(middleware);
+        _transitionAllMiddlewares.Add(middleware);
         return this;
     }
 
-    public StaterStateMachineBuilder<T, C> SubscribeOnTransition(string name, Event<C> callback)
+    public StaterStateMachineBuilder<T, TC> SubscribeOnTransition(string name, Event<TC> callback)
     {
-        if (!transitionCallbacks.ContainsKey(name)) transitionCallbacks[name] = new List<Event<C>>();
-        transitionCallbacks[name].Add(callback);
+        if (!_transitionCallbacks.ContainsKey(name)) _transitionCallbacks[name] = new List<Event<TC>>();
+        _transitionCallbacks[name].Add(callback);
         return this;
     }
 
-    public StaterStateMachineBuilder<T, C> SubscribeOnAllTransition(NameEvent<C> callback)
+    public StaterStateMachineBuilder<T, TC> SubscribeOnAllTransition(NameEvent<TC> callback)
     {
-        transitionAllCallbacks.Add(callback);
+        _transitionAllCallbacks.Add(callback);
         return this;
     }
 
-    public StaterStateMachineBuilder<T, C> SubscribeOnState(T state, Event<C> callback)
+    public StaterStateMachineBuilder<T, TC> SubscribeOnState(T state, Event<TC> callback)
     {
-        if (!stateCallbacks.ContainsKey(state)) stateCallbacks[state] = new List<Event<C>>();
-        stateCallbacks[state].Add(callback);
+        if (!_stateCallbacks.ContainsKey(state)) _stateCallbacks[state] = new List<Event<TC>>();
+        _stateCallbacks[state].Add(callback);
         return this;
     }
 
-    public StaterStateMachineBuilder<T, C> SubscribeOnAllState(StateEvent<T, C> callback)
+    public StaterStateMachineBuilder<T, TC> SubscribeOnAllState(StateEvent<T, TC> callback)
     {
-        stateAllCallbacks.Add(callback);
+        _stateAllCallbacks.Add(callback);
         return this;
     }
 
-    public StaterStateMachineBuilder<T, C> SetStartState(T state)
+    public StaterStateMachineBuilder<T, TC> SetStartState(T state)
     {
-        this.state = state;
+        this._state = state;
         return this;
     }
 
-    public StaterStateMachineBuilder<T, C> SetContext(C context)
+    public StaterStateMachineBuilder<T, TC> SetContext(TC context)
     {
-        this.context = context;
+        this._context = context;
         return this;
     }
 
-    public StaterStateMachineBuilder<T, C> FromJsonSchema(string schema, Func<string, T> stateConverter)
+    public StaterStateMachineBuilder<T, TC> FromJsonSchema(string schema, Func<string, T> stateConverter)
     {
         var schemaObject = JsonConvert.DeserializeObject<JsonSchema<T>>(schema);
         foreach (var s in schemaObject.States) AddState(stateConverter(s.ToString()));
@@ -397,24 +395,24 @@ public class StaterStateMachineBuilder<T, C> where C : IContext
         return this;
     }
 
-    public StaterStateMachineBuilder<T, C> SetFactory(StateMachineFactory<T, C> factory)
+    public StaterStateMachineBuilder<T, TC> SetFactory(StateMachineFactory<T, TC> factory)
     {
-        this.factory = factory;
+        _factory = factory;
         return this;
     }
 
-    public StaterStateMachineBuilder<T, C> SetContextJsonAdapter(IContextJsonAdapter<C> adapter)
+    public StaterStateMachineBuilder<T, TC> SetContextJsonAdapter(IContextJsonAdapter<TC> adapter)
     {
-        this.contextJsonAdapter = adapter;
+        _contextJsonAdapter = adapter;
         return this;
     }
 
-    public StaterStateMachine<T, C> Build()
+    public StaterStateMachine<T, TC> Build()
     {
-        if (context == null) throw new InvalidOperationException("Context must be set");
-        if (state == null && transitions.Count > 0) state = transitions.Values.First().Start;
-        return factory(new List<Transition<T, C>>(transitions.Values), context, state, states, transitionMiddlewares,
-            transitionAllMiddlewares, transitionCallbacks, transitionAllCallbacks, stateCallbacks, stateAllCallbacks,
-            contextJsonAdapter);
+        if (_context == null) throw new InvalidOperationException("Context must be set");
+        if (_state == null && _transitions.Count > 0) _state = _transitions.Values.First().Start;
+        return _factory(new List<Transition<T, TC>>(_transitions.Values), _context, _state, _states, _transitionMiddlewares,
+            _transitionAllMiddlewares, _transitionCallbacks, _transitionAllCallbacks, _stateCallbacks, _stateAllCallbacks,
+            _contextJsonAdapter);
     }
 }

@@ -3,10 +3,10 @@ name: Java Tests
 on:
   push:
     paths:
-#      - 'projects/java/**'
+      - 'projects/java/**'
   pull_request:
     paths:
-#      - 'projects/java/**'
+      - 'projects/java/**'
 
 jobs:
   build-and-test:

@@ -9,6 +9,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,13 +53,10 @@ interface StateMachineFactory<T, C extends Context> {
     StaterStateMachine<T, C> create(List<Transition<T, C>> transitions, C context, T startState, Set<T> states, Map<String, List<TransitionMiddleware<C>>> transitionMiddlewares, List<TransitionNameMiddleware<C>> transitionAllMiddlewares, Map<String, List<Event<C>>> transitionCallbacks, List<NameEvent<C>> transitionAllCallbacks, Map<T, List<Event<C>>> stateCallbacks, List<StateEvent<T, C>> stateAllCallbacks, ContextJsonAdapter<C> contextJsonAdapter);
 }
 
-record TransitionJson<T>(String name, T start, T end) {
+record Transition<T, C extends Context>(String name, T start, T end, @JsonIgnore Predicate<C> condition, @JsonIgnore Consumer<C> event) {
 }
 
-record Transition<T, C extends Context>(String name, T start, T end, Predicate<C> condition, Consumer<C> event) {
-}
-
-record JsonSchema<T>(List<T> states, T startState, List<TransitionJson<T>> transitions) {
+record JsonSchema<T>(List<T> states, T startState, List<Transition<T, EmptyContext>> transitions) {
 }
 
 record JsonState<T>(T state, String context) {
@@ -202,7 +200,7 @@ abstract class StaterStateMachine<T, C extends Context> {
         List<T> sortedStates = new ArrayList<>(states);
         sortedStates.sort(Comparator.comparing(T::toString, collator));
         ObjectMapper objectMapper = new ObjectMapper();
-        return objectMapper.writeValueAsString(new JsonSchema<>(sortedStates, startState, transitions.stream().map(transition -> new TransitionJson<>(transition.name(), transition.start(), transition.end())).toList()));
+        return objectMapper.writeValueAsString(new JsonSchema<>(sortedStates, startState, transitions.stream().map(transition -> new Transition<T, EmptyContext>(transition.name(), transition.start(), transition.end(), null, null)).toList()));
     }
 
     public String toJson() throws Exception {

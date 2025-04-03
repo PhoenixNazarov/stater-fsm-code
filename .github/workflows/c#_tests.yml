@@ -1,0 +1,53 @@
+name: C# Tests and Coverage
+
+on:
+  push:
+    paths:
+      - 'projects/C#/**'
+  pull_request:
+    paths:
+      - 'projects/C#/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dotnet-version: [6.0, 7.0, 8.0]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
+
+      - name: Restore dependencies
+        run: |
+          cd projects/C#
+          dotnet restore
+
+      - name: Build the project
+        run: |
+          cd projects/C#
+          dotnet build --configuration Release
+
+      - name: Run tests with coverage
+        run: |
+          cd projects/C#
+          dotnet test --configuration Release --collect:"XPlat Code Coverage"
+#
+#      - name: Publish code coverage results
+#        if: always()
+#        run: |
+#          cd projects/C#
+#          # Convert coverage results to a readable format for GitHub Actions
+#          reportgenerator "-reports:./TestResults/*coverage.cobertura.xml" "-targetdir:./coverage-report" -reporttypes:Html
+#
+#      - name: Upload coverage report to GitHub
+#        uses: actions/upload-artifact@v3
+#        with:
+#          name: coverage-report
+#          path: ./coverage-report

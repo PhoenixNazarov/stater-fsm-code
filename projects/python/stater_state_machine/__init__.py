@@ -74,10 +74,10 @@ class StaterStateMachine(Generic[T, C]):
             states: Optional[Set[T]] = None,
             transition_middlewares: Optional[Dict[str, List[Callable[[C, Callable], None]]]] = None,
             transition_all_middlewares: Optional[List[Callable[[str, C, Callable], None]]] = None,
-            transition_callbacks: Optional[Dict[str, List[Callable[[C], None]]]] = None,
-            transition_all_callbacks: Optional[List[Callable[[str, C], None]]] = None,
-            state_callbacks: Optional[Dict[T, List[Callable[[C], None]]]] = None,
-            state_all_callbacks: Optional[List[Callable[[T, C], None]]] = None,
+            transition_callbacks: Optional[Dict[str, List[Event[C]]]] = None,
+            transition_all_callbacks: Optional[List[NameEvent[C]]] = None,
+            state_callbacks: Optional[Dict[T, List[Event[C]]]] = None,
+            state_all_callbacks: Optional[List[StateEvent[T, C]]] = None,
             context_json_adapter: Optional['ContextJsonAdapter[C]'] = None,
             state: Optional[T] = None,
     ):
@@ -262,7 +262,7 @@ class StaterStateMachineBuilder(Generic[T, C]):
         self.__context_json_adapter: Optional[ContextJsonAdapter[C]] = None
 
     def add_transition(self, name: str, start: T, end: T, condition: Optional[Callable[[C], bool]] = None,
-                       event: Optional[Callable[[C], None]] = None):
+                       event: Optional[Event[C]] = None):
         self.add_state(start)
         self.add_state(end)
         self.__transitions[name] = Transition(name=name, start=start, end=end, condition=condition, event=event)
@@ -279,7 +279,7 @@ class StaterStateMachineBuilder(Generic[T, C]):
         self.__transitions[name].condition = condition
         return self
 
-    def set_transition_event(self, name: str, event: Callable[[C], None]):
+    def set_transition_event(self, name: str, event: Event[C]):
         if name not in self.__transitions:
             raise ValueError(f"Transition not found: {name}")
         self.__transitions[name].event = event
@@ -293,19 +293,19 @@ class StaterStateMachineBuilder(Generic[T, C]):
         self.__transition_all_middlewares.append(middleware)
         return self
 
-    def subscribe_on_transition(self, name: str, callback: Callable[[C], None]):
+    def subscribe_on_transition(self, name: str, callback: Event[C]):
         self.__transition_callbacks.setdefault(name, []).append(callback)
         return self
 
-    def subscribe_on_all_transition(self, callback: Callable[[str, C], None]):
+    def subscribe_on_all_transition(self, callback: NameEvent[C]):
         self.__transition_all_callbacks.append(callback)
         return self
 
-    def subscribe_on_state(self, state: T, callback: Callable[[C], None]):
+    def subscribe_on_state(self, state: T, callback: Event[C]):
         self.__state_callbacks.setdefault(state, []).append(callback)
         return self
 
-    def subscribe_on_all_state(self, callback: Callable[[T, C], None]):
+    def subscribe_on_all_state(self, callback: StateEvent[T, C]):
         self.__state_all_callbacks.append(callback)
         return self
 
