@@ -26,23 +26,23 @@ jobs:
 
       - name: Restore dependencies
         run: |
-          cd projects/c#
+          cd 'projects/с#'
           dotnet restore
 
       - name: Build the project
         run: |
-          cd projects/c#
+          cd 'projects/с#'
           dotnet build --configuration Release
 
       - name: Run tests with coverage
         run: |
-          cd projects/c#
+          cd 'projects/с#'
           dotnet test --configuration Release --collect:"XPlat Code Coverage"
 #
 #      - name: Publish code coverage results
 #        if: always()
 #        run: |
-#          cd projects/c#
+#          cd 'projects/с#'
 #          # Convert coverage results to a readable format for GitHub Actions
 #          reportgenerator "-reports:./TestResults/*coverage.cobertura.xml" "-targetdir:./coverage-report" -reporttypes:Html
 #
