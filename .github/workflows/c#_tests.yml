@@ -1,12 +1,12 @@
-name: C# Tests and Coverage
+name: c# Tests and Coverage
 
 on:
   push:
     paths:
-#      - 'projects/C#/**'
+#      - 'projects/c#/**'
   pull_request:
     paths:
-#      - 'projects/C#/**'
+#      - 'projects/c#/**'
 
 jobs:
   build-and-test:
@@ -26,23 +26,23 @@ jobs:
 
       - name: Restore dependencies
         run: |
-          cd projects/C#
+          cd projects/c#
           dotnet restore
 
       - name: Build the project
         run: |
-          cd projects/C#
+          cd projects/c#
           dotnet build --configuration Release
 
       - name: Run tests with coverage
         run: |
-          cd projects/C#
+          cd projects/c#
           dotnet test --configuration Release --collect:"XPlat Code Coverage"
 #
 #      - name: Publish code coverage results
 #        if: always()
 #        run: |
-#          cd projects/C#
+#          cd projects/c#
 #          # Convert coverage results to a readable format for GitHub Actions
 #          reportgenerator "-reports:./TestResults/*coverage.cobertura.xml" "-targetdir:./coverage-report" -reporttypes:Html
 #
