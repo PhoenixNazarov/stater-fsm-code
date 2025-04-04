@@ -3,10 +3,10 @@ name: c# Tests and Coverage
 on:
   push:
     paths:
-#      - 'projects/c#/**'
+      - 'projects/c#/**'
   pull_request:
     paths:
-#      - 'projects/c#/**'
+      - 'projects/c#/**'
 
 jobs:
   build-and-test:
