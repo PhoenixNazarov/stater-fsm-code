@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        compiler: [gcc-10, gcc-11, clang-10, clang-11]
+        compiler: [gcc-10, gcc-11, clang-11, clang-12]
 
     steps:
       - name: Checkout repository
