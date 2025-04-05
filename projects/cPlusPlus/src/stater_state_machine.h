@@ -72,7 +72,7 @@ class stater_state_machine {
     std::unordered_set<T> states;
     std::unordered_map<T, std::vector<Transition<T, C> > > transitions_grouped_start;
     std::unordered_map<std::string, Transition<T, C> > transitions_by_name;
-    std::unordered_map<std::string, std::vector<transition_middleware<C> > > transition_middlewares;
+    std::unordered_map<std::string, std::vector<::transition_middleware<C> > > transition_middlewares;
     std::vector<transition_name_middleware<C> > transition_all_middlewares;
     std::unordered_map<std::string, std::vector<event<C> > > transition_callbacks;
     std::vector<name_event<C> > transition_all_callbacks;
