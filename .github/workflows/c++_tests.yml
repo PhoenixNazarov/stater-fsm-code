@@ -3,10 +3,10 @@ name: C++ Tests and Coverage
 on:
   push:
     paths:
-      - 'projects/cPlusPlus/**'
+#      - 'projects/cPlusPlus/**'
   pull_request:
     paths:
-      - 'projects/cPlusPlus/**'
+#      - 'projects/cPlusPlus/**'
 
 jobs:
   build-and-test:
