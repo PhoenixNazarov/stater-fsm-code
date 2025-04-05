@@ -22,6 +22,11 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y lcov gcovr cmake g++
 
+      - name: Configure CMake
+        run: |
+          cd projects/cPlusPlus
+          cmake -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="--coverage"
+
       - name: Build
         run: |
           cd projects/cPlusPlus
