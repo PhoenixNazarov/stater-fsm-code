@@ -20,6 +20,7 @@ FetchContent_MakeAvailable(gtest)
 
 add_library(stater_state_machine
         src/stater_state_machine.h
+        src/stater_state_machine.cpp
 )
 target_link_libraries(stater_state_machine PRIVATE nlohmann_json::nlohmann_json)
 
