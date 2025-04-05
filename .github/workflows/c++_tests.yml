@@ -1,40 +1,50 @@
-name: c++ Tests and Coverage
+name: C++ Tests and Coverage
 
 on:
   push:
     paths:
-  #      - 'projects/cPlusPlus/**'
+      - 'projects/cPlusPlus/**'
   pull_request:
     paths:
-#      - 'projects/cPlusPlus/**'
+      - 'projects/cPlusPlus/**'
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        compiler: [gcc-10, gcc-11, gcc-13]
+        compiler:
+          - { cc: gcc-11, cxx: g++-11 }
+          - { cc: gcc-12, cxx: g++-12 }
+          - { cc: gcc-13, cxx: g++-13 }
+          - { cc: clang-15, cxx: clang++-15 }
+          - { cc: clang-16, cxx: clang++-16 }
+          - { cc: clang-17, cxx: clang++-17 }
+      fail-fast: false  # Continue testing other configurations even if one fails
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y lcov gcovr cmake g++ clang
-
-      - name: Set up compiler
         run: |
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/${{ matrix.compiler }} 100
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/${{ matrix.compiler }} 100
-          sudo update-alternatives --set gcc /usr/bin/${{ matrix.compiler }}
-          sudo update-alternatives --set g++ /usr/bin/${{ matrix.compiler }}
+          sudo apt-get update
+          sudo apt-get install -y lcov gcovr cmake
+          # Install specific compiler versions
+          sudo apt-get install -y ${{ matrix.compiler.cc }} ${{ matrix.compiler.cxx }}
 
       - name: Configure CMake
+        env:
+          CC: ${{ matrix.compiler.cc }}
+          CXX: ${{ matrix.compiler.cxx }}
         run: |
           cd projects/cPlusPlus
           cmake -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="--coverage"
 
       - name: Build
+        env:
+          CC: ${{ matrix.compiler.cc }}
+          CXX: ${{ matrix.compiler.cxx }}
         run: |
           cd projects/cPlusPlus
           cmake --build build
