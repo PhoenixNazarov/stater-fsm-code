@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.30)
 project(stater_state_machine)
-
+enable_testing()
 set(CMAKE_CXX_STANDARD 20)
 
 include(FetchContent)
