@@ -50,7 +50,7 @@ struct Transition {
     T start;
     T end;
     std::optional<std::function<bool(C *)> > condition;
-    std::optional<event<C> > event;
+    std::optional<::event<C> > event;
 };
 
 template<typename T>
@@ -393,7 +393,7 @@ public:
     }
 
     stater_state_machine_builder &transition_middleware(const std::string &name,
-                                                        const transition_middleware<C> &middleware) {
+                                                        const ::transition_middleware<C> &middleware) {
         transition_middlewares[name].push_back(middleware);
         return *this;
     }
