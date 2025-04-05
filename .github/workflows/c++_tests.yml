@@ -1,0 +1,38 @@
+name: c++ Tests and Coverage
+
+on:
+  push:
+    paths:
+  #      - 'projects/cPlusPlus/**'
+  pull_request:
+    paths:
+#      - 'projects/cPlusPlus/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dotnet-version: [ 8.0 ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y lcov gcovr cmake g++
+
+      - name: Build
+        run: |
+          cd projects/cPlusPlus
+          cmake --build build
+
+      - name: Run tests
+        run: |
+          cd projects/cPlusPlus/build
+          ctest --output-on-failure
+
+      - name: Generate and show detailed coverage in console
+        run: |
+          cd projects/cPlusPlus/build
+          gcovr -r .. --exclude '.*gtest.*' --exclude '.*nlohmann.*' --txt
