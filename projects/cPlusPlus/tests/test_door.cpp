@@ -114,10 +114,10 @@ public:
         const std::vector<name_event<door_fsm_context> > &transition_all_callbacks,
         const std::unordered_map<::states, std::vector<event<door_fsm_context> > > &state_callbacks,
         const std::vector<state_event<::states, door_fsm_context> > &state_all_callbacks,
-        std::shared_ptr<::context_json_adapter<door_fsm_context> > context_json_adapter
+        std::shared_ptr<::context_json_adapter<door_fsm_context> > context_json_adapter_
     ): stater_state_machine(transitions, context, startState, states, transition_middlewares,
                             transition_all_middlewares, transition_callbacks, transition_all_callbacks, state_callbacks,
-                            state_all_callbacks, std::move(context_json_adapter)) {
+                            state_all_callbacks, std::move(context_json_adapter_)) {
     }
 
     void ajar_plus() {
@@ -317,13 +317,13 @@ state_machine_factory<states, door_fsm_context> typed_door_factory = [](
     const std::vector<name_event<door_fsm_context> > &transition_all_callbacks,
     const std::unordered_map<::states, std::vector<event<door_fsm_context> > > &state_callbacks,
     const std::vector<state_event<::states, door_fsm_context> > &state_all_callbacks,
-    std::shared_ptr<context_json_adapter<door_fsm_context> > context_json_adapter) ->
+    std::shared_ptr<context_json_adapter<door_fsm_context> > context_json_adapter_) ->
     std::unique_ptr<types_door_state_machine> {
     return std::make_unique<types_door_state_machine>(
         transitions, context, startState, states,
         transitionMiddleware, transitionAllMiddlewares,
         transitionCallbacks, transition_all_callbacks,
-        state_callbacks, state_all_callbacks, context_json_adapter);
+        state_callbacks, state_all_callbacks, context_json_adapter_);
 };
 
 TEST(state_machine_test, TestAutoTransition) {

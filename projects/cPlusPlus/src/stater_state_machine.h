@@ -80,7 +80,7 @@ class stater_state_machine {
     std::vector<state_event<T, C> > state_all_callbacks;
     T current_state;
     C *context;
-    std::shared_ptr<context_json_adapter<C> > context_json_adapter;
+    std::shared_ptr<context_json_adapter<C> > context_json_adapter_;
     bool enable_events_ = true;
 
 public:
@@ -109,7 +109,7 @@ public:
         const std::vector<name_event<C> > &transition_all_callbacks,
         const std::unordered_map<T, std::vector<event<C> > > &state_callbacks,
         const std::vector<state_event<T, C> > &state_all_callbacks,
-        std::shared_ptr<::context_json_adapter<C> > context_json_adapter
+        std::shared_ptr<::context_json_adapter<C> > context_json_adapter_
     )
         : transitions(transitions),
           transition_middlewares(transition_middlewares),
@@ -119,7 +119,7 @@ public:
           state_callbacks(state_callbacks),
           state_all_callbacks(state_all_callbacks),
           context(context),
-          context_json_adapter(context_json_adapter),
+          context_json_adapter_(context_json_adapter_),
           current_state(startState),
           enable_events_(true) {
         if (!states.empty()) {
@@ -259,14 +259,14 @@ public:
     std::string to_json() {
         json j;
         j["state"] = current_state;
-        j["context"] = context_json_adapter->to_json(context);
+        j["context"] = context_json_adapter_->to_json(context);
         return j.dump();
     }
 
     void from_json(std::string json_) {
         auto data = json::parse(json_);
         this->current_state = data["state"];
-        this->context = context_json_adapter->from_json(data["context"]);
+        this->context = context_json_adapter_->from_json(data["context"]);
     }
 
     void disable_events() {
@@ -307,13 +307,13 @@ public:
         const std::vector<name_event<C> > &transition_all_callbacks,
         const std::unordered_map<T, std::vector<event<C> > > &state_callbacks,
         const std::vector<state_event<T, C> > &state_all_callbacks,
-        std::shared_ptr<context_json_adapter<C> > context_json_adapter
+        std::shared_ptr<context_json_adapter<C> > context_json_adapter_
     )
         : stater_state_machine<T, C>(
             transitions, context, startState, states,
             transition_middlewares, transition_all_middlewares,
             transition_callbacks, transition_all_callbacks,
-            state_callbacks, state_all_callbacks, context_json_adapter
+            state_callbacks, state_all_callbacks, context_json_adapter_
         ) {
     }
 };
@@ -346,13 +346,13 @@ class stater_state_machine_builder {
         const std::vector<name_event<C> > &transition_all_callbacks,
         const std::unordered_map<T, std::vector<event<C> > > &state_callbacks,
         const std::vector<state_event<T, C> > &state_all_callbacks,
-        std::shared_ptr<context_json_adapter<C> > context_json_adapter) ->
+        std::shared_ptr<context_json_adapter<C> > context_json_adapter_) ->
         std::unique_ptr<base_fsm<T, C> > {
         return std::make_unique<base_fsm<T, C> >(
             transitions, context, startState, states,
             transitionMiddleware, transitionAllMiddlewares,
             transitionCallbacks, transition_all_callbacks,
-            state_callbacks, state_all_callbacks, context_json_adapter);
+            state_callbacks, state_all_callbacks, context_json_adapter_);
     };
     std::shared_ptr<context_json_adapter<C> > context_json_adapter_ = nullptr;
 
