@@ -24,23 +24,10 @@ jobs:
 
       - name: Set up compiler
         run: |
-          if [[ "${{ matrix.compiler }}" == "gcc-10" ]]; then
-            sudo apt-get install -y gcc-10 g++-10
-            sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100
-            sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100
-          elif [[ "${{ matrix.compiler }}" == "gcc-11" ]]; then
-            sudo apt-get install -y gcc-11 g++-11
-            sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 100
-            sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 100
-          elif [[ "${{ matrix.compiler }}" == "clang-11" ]]; then
-            sudo apt-get install -y clang-11
-            sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-11 100
-            sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-11 100
-          elif [[ "${{ matrix.compiler }}" == "clang-12" ]]; then
-            sudo apt-get install -y clang-12
-            sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-12 100
-            sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-12 100
-          fi
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/${{ matrix.compiler }} 100
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/${{ matrix.compiler }} 100
+          sudo update-alternatives --set gcc /usr/bin/${{ matrix.compiler }}
+          sudo update-alternatives --set g++ /usr/bin/${{ matrix.compiler }}
 
       - name: Configure CMake
         run: |
