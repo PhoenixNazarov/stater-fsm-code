@@ -31,7 +31,6 @@ jobs:
         run: |
           cd projects/cPlusPlus
           cmake --build build
-          nm build/libstater_state_machine.a | grep EmptyContext
 
       - name: Run tests
         run: |

@@ -19,6 +19,9 @@ public:
     virtual ~context() = default;
 };
 
+class empty_context : public context {
+};
+
 template<typename C>
 class context_json_adapter {
 public:
