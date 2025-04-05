@@ -325,7 +325,7 @@ class stater_state_machine_builder {
     std::unordered_set<T> states;
     T startState;
     C *context;
-    std::unordered_map<std::string, std::vector<transition_middleware<C> > > transition_middlewares;
+    std::unordered_map<std::string, std::vector<::transition_middleware<C> > > transition_middlewares;
     std::vector<transition_name_middleware<C> > transition_all_middlewares;
     std::unordered_map<std::string, std::vector<event<C> > > transition_callbacks;
     std::vector<name_event<C> > transition_all_callbacks;
