@@ -3,10 +3,10 @@ name: c# Tests and Coverage
 on:
   push:
     paths:
-      - 'projects/c#/**'
+      - 'projects/csharp/**'
   pull_request:
     paths:
-      - 'projects/c#/**'
+      - 'projects/csharp/**'
 
 jobs:
   build-and-test:
@@ -26,17 +26,17 @@ jobs:
 
       - name: Restore dependencies
         run: |
-          cd 'projects/с#/Stater.StateMachine.Lib'
+          cd projects/csharp/Stater.StateMachine.Lib
           dotnet restore
 
       - name: Build the project
         run: |
-          cd 'projects/с#/Stater.StateMachine.Lib'
+          cd projects/csharp/Stater.StateMachine.Lib
           dotnet build --configuration Release
 
       - name: Run tests with coverage
         run: |
-          cd 'projects/с#/Stater.StateMachine.Lib'
+          cd projects/csharp/Stater.StateMachine.Lib
           dotnet test --configuration Release --collect:"XPlat Code Coverage"
 #
 #      - name: Publish code coverage results
