@@ -13,14 +13,34 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dotnet-version: [ 8.0 ]
+        compiler: [gcc-10, gcc-11, clang-10, clang-11]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y lcov gcovr cmake g++
+        run: sudo apt-get update && sudo apt-get install -y lcov gcovr cmake g++ clang
+
+      - name: Set up compiler
+        run: |
+          if [[ "${{ matrix.compiler }}" == "gcc-10" ]]; then
+            sudo apt-get install -y gcc-10 g++-10
+            sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100
+            sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100
+          elif [[ "${{ matrix.compiler }}" == "gcc-11" ]]; then
+            sudo apt-get install -y gcc-11 g++-11
+            sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 100
+            sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 100
+          elif [[ "${{ matrix.compiler }}" == "clang-10" ]]; then
+            sudo apt-get install -y clang-10
+            sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-10 100
+            sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-10 100
+          elif [[ "${{ matrix.compiler }}" == "clang-11" ]]; then
+            sudo apt-get install -y clang-11
+            sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-11 100
+            sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-11 100
+          fi
 
       - name: Configure CMake
         run: |
