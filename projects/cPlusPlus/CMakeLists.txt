@@ -28,8 +28,4 @@ add_executable(test_door tests/test_door.cpp)
 target_include_directories(test_door PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(test_door PRIVATE stater_state_machine nlohmann_json::nlohmann_json gtest)
 
-target_compile_options(stater_state_machine PRIVATE --coverage)
-target_link_options(stater_state_machine PRIVATE --coverage)
-
-target_compile_options(test_door PRIVATE --coverage)
-target_link_options(test_door PRIVATE --coverage)
+add_test(NAME test_door COMMAND test_door)
