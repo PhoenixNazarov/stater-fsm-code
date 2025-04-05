@@ -233,7 +233,7 @@ public class TestDoor
     [Fact]
     public void TestBuilder()
     {
-        StaterStateMachine<States, DoorFsmContext> doorFsm = new StaterStateMachineBuilder<States, DoorFsmContext>()
+        var doorFsm = new StaterStateMachineBuilder<States, DoorFsmContext>()
             .AddTransition("preOpen", States.CLOSE, States.AJAR, _ => true, context => context.DegreeOfOpening = 1)
             .AddTransition("preClose", States.OPEN, States.AJAR, _ => true, context => context.DegreeOfOpening = 99)
             .AddTransition("open", States.AJAR, States.OPEN, ctx => ctx.DegreeOfOpening >= 99,

@@ -35,10 +35,10 @@ public class Transition<T, TC>(string name, T start, T end, Predicate<TC>? condi
     public T Start { get; } = start;
     public T End { get; } = end;
 
-    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonIgnore]
     public Predicate<TC>? Condition { get; } = condition;
 
-    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonIgnore]
     public Event<TC>? Event { get; } = eEvent;
 }
 
@@ -139,9 +139,6 @@ public abstract class StaterStateMachine<T, TC> where TC : IContext where T : no
             throw new InvalidOperationException(
                 $"Start state does not match transition's start state: {transition.Start}");
 
-        if (transition.Condition != null && !transition.Condition(_context))
-            throw new InvalidOperationException($"Condition returned false for transition {name}");
-
         void ConditionHandler()
         {
             if (transition.Condition != null && !transition.Condition(_context))
@@ -196,19 +193,17 @@ public abstract class StaterStateMachine<T, TC> where TC : IContext where T : no
 
     public void AutoTransition()
     {
-        if (_transitionsGroupedStart.TryGetValue(_state, out var possibleTransitions))
+        if (!_transitionsGroupedStart.TryGetValue(_state, out var possibleTransitions)) return;
+        foreach (var transition in possibleTransitions)
         {
-            foreach (var transition in possibleTransitions)
+            try
             {
-                try
-                {
-                    Transition(transition.Name);
-                    return;
-                }
-                catch
-                {
-                    // ignored
-                }
+                Transition(transition.Name);
+                return;
+            }
+            catch
+            {
+                // ignored
             }
         }
     }
@@ -274,19 +269,19 @@ internal class BaseFsm<T, C> : StaterStateMachine<T, C> where C : IContext
 
 public class StaterStateMachineBuilder<T, TC> where TC : IContext
 {
-    private readonly Dictionary<string, Transition<T, TC>> _transitions = new();
+    private Dictionary<string, Transition<T, TC>> _transitions = new();
     private T _state;
-    private readonly HashSet<T> _states = new();
+    private HashSet<T> _states = new();
     private TC _context;
 
-    private readonly Dictionary<string, List<TransitionMiddleware<TC>>> _transitionMiddlewares = new();
-    private readonly List<TransitionNameMiddleware<TC>> _transitionAllMiddlewares = new();
+    private Dictionary<string, List<TransitionMiddleware<TC>>> _transitionMiddlewares = new();
+    private List<TransitionNameMiddleware<TC>> _transitionAllMiddlewares = new();
 
-    private readonly Dictionary<string, List<Event<TC>>> _transitionCallbacks = new();
-    private readonly List<NameEvent<TC>> _transitionAllCallbacks = new();
+    private Dictionary<string, List<Event<TC>>> _transitionCallbacks = new();
+    private List<NameEvent<TC>> _transitionAllCallbacks = new();
 
-    private readonly Dictionary<T, List<Event<TC>>> _stateCallbacks = new();
-    private readonly List<StateEvent<T, TC>> _stateAllCallbacks = new();
+    private Dictionary<T, List<Event<TC>>> _stateCallbacks = new();
+    private List<StateEvent<T, TC>> _stateAllCallbacks = new();
     private IContextJsonAdapter<TC> _contextJsonAdapter;
 
     private StateMachineFactory<T, TC> _factory =
@@ -405,6 +400,28 @@ public class StaterStateMachineBuilder<T, TC> where TC : IContext
     {
         _contextJsonAdapter = adapter;
         return this;
+    }
+
+    public StaterStateMachineBuilder<T, TC> Copy()
+    {
+        var copy = new StaterStateMachineBuilder<T, TC>();
+
+        copy._state = _state;
+        copy._context = _context;
+        copy._factory = _factory;
+        copy._contextJsonAdapter = _contextJsonAdapter;
+        copy._factory = _factory;
+
+        copy._transitions = new Dictionary<string, Transition<T, TC>>(_transitions);
+        copy._states = new HashSet<T>(_states);
+        copy._transitionMiddlewares = new Dictionary<string, List<TransitionMiddleware<TC>>>(_transitionMiddlewares);
+        copy._transitionAllMiddlewares = new List<TransitionNameMiddleware<TC>>(_transitionAllMiddlewares);
+        copy._transitionCallbacks = new Dictionary<string, List<Event<TC>>>(_transitionCallbacks);
+        copy._transitionAllCallbacks = new List<NameEvent<TC>>(_transitionAllCallbacks);
+        copy._stateCallbacks = new Dictionary<T, List<Event<TC>>>(_stateCallbacks);
+        copy._stateAllCallbacks = new List<StateEvent<T, TC>>(_stateAllCallbacks);
+
+        return copy;
     }
 
     public StaterStateMachine<T, TC> Build()
