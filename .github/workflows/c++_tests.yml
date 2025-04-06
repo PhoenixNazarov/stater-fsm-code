@@ -74,10 +74,10 @@ jobs:
       - name: Generate and show detailed coverage
         run: |
           cd projects/cPlusPlus/build
-          if [ "${{ matrix.compiler.cc }}" == "clang-16" ]; then
+          if [ "${{ matrix.compiler.cc }}" = "clang-16" ]; then
             llvm-profdata-16 merge -sparse coverage-*.profraw -o coverage.profdata
             llvm-cov-16 report ./fsm_tests -instr-profile=coverage.profdata --ignore-filename-regex=".*(gtest|nlohmann|CMakeFiles).*"
-          elif [ "${{ matrix.compiler.cc }}" == "clang-16" ]; then
+          elif [ "${{ matrix.compiler.cc }}" = "clang-16" ]; then
             llvm-profdata-17 merge -sparse coverage-*.profraw -o coverage.profdata
             llvm-cov-17 report ./fsm_tests -instr-profile=coverage.profdata --ignore-filename-regex=".*(gtest|nlohmann|CMakeFiles).*"
           else
