@@ -31,14 +31,14 @@ inline void from_json(const nlohmann::json &j, states &e) {
     else if (state_str == "OPEN") e = states::OPEN;
 }
 
-class door_fsm_context : context {
+class door_fsm_context final : context {
     int degree_of_opening;
 
 public:
     door_fsm_context() : degree_of_opening(100) {
     }
 
-    explicit door_fsm_context(int degree_of_opening) : degree_of_opening(degree_of_opening) {
+    explicit door_fsm_context(const int degree_of_opening) : degree_of_opening(degree_of_opening) {
     }
 
     [[nodiscard]] int get_degree_of_opening() const {
@@ -317,7 +317,7 @@ state_machine_factory<states, door_fsm_context> typed_door_factory = [](
     const std::vector<name_event<door_fsm_context> > &transition_all_callbacks,
     const std::unordered_map<::states, std::vector<event<door_fsm_context> > > &state_callbacks,
     const std::vector<state_event<::states, door_fsm_context> > &state_all_callbacks,
-    std::shared_ptr<context_json_adapter<door_fsm_context> > context_json_adapter_) ->
+    const std::shared_ptr<context_json_adapter<door_fsm_context> >& context_json_adapter_) ->
     std::unique_ptr<types_door_state_machine> {
     return std::make_unique<types_door_state_machine>(
         transitions, context, startState, states,
@@ -403,7 +403,7 @@ public:
         return std::to_string(context->get_degree_of_opening());
     }
 
-    door_fsm_context *from_json(const std::string &json) const override {
+    [[nodiscard]] door_fsm_context *from_json(const std::string &json) const override {
         return new door_fsm_context(std::stoi(json));
     }
 };
@@ -453,15 +453,15 @@ TEST(state_machine_test, TestMiddlewareAndCallbacks) {
                     next(ctx);
                 })
             .transition_all_middleware(
-                [&transition_all_middleware_count](std::string name, door_fsm_context *ctx,
-                                                const name_event<door_fsm_context> &next) {
+                [&transition_all_middleware_count](const std::string& name, door_fsm_context *ctx,
+                                                   const name_event<door_fsm_context> &next) {
                     transition_all_middleware_count++;
                     next(name, ctx);
                 })
             .subscribe_on_transition("open", [&subscribe_on_transition_count](door_fsm_context *ctx) {
                 subscribe_on_transition_count++;
             })
-            .subscribe_on_all_transition([&subscribe_on_all_transition_count](std::string name, door_fsm_context *ctx) {
+            .subscribe_on_all_transition([&subscribe_on_all_transition_count](const std::string& name, door_fsm_context *ctx) {
                 subscribe_on_all_transition_count++;
             })
             .subscribe_on_state(states::AJAR, [&subscribe_on_state_count](door_fsm_context *ctx) {
