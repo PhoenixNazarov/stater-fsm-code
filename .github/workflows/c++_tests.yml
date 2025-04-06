@@ -52,20 +52,17 @@ jobs:
         run: |
           cd projects/cPlusPlus
           if [ "${{ matrix.compiler.cc }}" = "clang-16" ] || [ "${{ matrix.compiler.cc }}" = "clang-17" ]; then
-            export CFLAGS="-fprofile-instr-generate -fcoverage-mapping"
+          export CFLAGS="-fprofile-instr-generate -fcoverage-mapping"
             export CXXFLAGS="-fprofile-instr-generate -fcoverage-mapping"
+            EXTRA_CMAKE_FLAGS="-DCMAKE_C_FLAGS='$CFLAGS' -DCMAKE_CXX_FLAGS='$CXXFLAGS'"
           else
-            export CFLAGS=""
-            export CXXFLAGS=""
+            EXTRA_CMAKE_FLAGS="-DCMAKE_C_FLAGS='--coverage' -DCMAKE_CXX_FLAGS='--coverage'"
           fi
           
           cmake -B build -S . \
-            -DCMAKE_C_COMPILER=${{ matrix.compiler.cc }} \
-            -DCMAKE_CXX_COMPILER=${{ matrix.compiler.cxx }} \
-            -DCMAKE_C_FLAGS="$CFLAGS" \
-            -DCMAKE_CXX_FLAGS="$CXXFLAGS"
-          
-          cmake --build build
+          -DCMAKE_C_COMPILER=${{ matrix.compiler.cc }} \
+          -DCMAKE_CXX_COMPILER=${{ matrix.compiler.cxx }} \
+            $EXTRA_CMAKE_FLAGS
 
       - name: Run tests
         run: |
