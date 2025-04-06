@@ -74,16 +74,19 @@ jobs:
       - name: Generate and show detailed coverage
         run: |
           cd projects/cPlusPlus/build
-          if [[ "${{ matrix.compiler.cc }}" == clang-* ]]; then
+          if [ "${{ matrix.compiler.cc }}" == "clang-16" ]; then
             llvm-profdata-16 merge -sparse coverage-*.profraw -o coverage.profdata
-            llvm-cov-16 report ./fsm_tests -instr-profile=coverage.profdata
+            llvm-cov-16 report ./fsm_tests -instr-profile=coverage.profdata --ignore-filename-regex=".*(gtest|nlohmann|CMakeFiles).*"
+          elif [ "${{ matrix.compiler.cc }}" == "clang-16" ]; then
+            llvm-profdata-17 merge -sparse coverage-*.profraw -o coverage.profdata
+            llvm-cov-17 report ./fsm_tests -instr-profile=coverage.profdata --ignore-filename-regex=".*(gtest|nlohmann|CMakeFiles).*"
           else
-            if [ "${{ matrix.compiler.cc }}" = "gcc-11" ]; then
+            elif [ "${{ matrix.compiler.cc }}" = "gcc-11" ]; then
               GCOV_EXEC=gcov-11
             elif [ "${{ matrix.compiler.cc }}" = "gcc-12" ]; then
               GCOV_EXEC=gcov-12
             elif [ "${{ matrix.compiler.cc }}" = "gcc-13" ]; then
               GCOV_EXEC=gcov-13
             fi
-            gcovr -r .. --exclude '.*gtest.*' --exclude '.*nlohmann.*' --exclude-directories '.*CMakeFiles.*' --gcov-executable $GCOV_EXEC --verbose --txt
+            gcovr -r .. --exclude '.*gtest.*' --exclude '.*nlohmann.*' --exclude-directories '.*CMakeFiles.*' --gcov-executable $GCOV_EXEC --txt
           fi
