@@ -75,8 +75,8 @@ jobs:
         run: |
           cd projects/cPlusPlus/build
           if [[ "${{ matrix.compiler.cc }}" == clang-* ]]; then
-            llvm-profdata merge -sparse coverage-*.profraw -o coverage.profdata
-            llvm-cov report ./my_executable -instr-profile=coverage.profdata
+            llvm-profdata-16 merge -sparse coverage-*.profraw -o coverage.profdata
+            llvm-cov report ./fsm_tests -instr-profile=coverage.profdata
           else
             if [ "${{ matrix.compiler.cc }}" = "gcc-11" ]; then
               GCOV_EXEC=gcov-11

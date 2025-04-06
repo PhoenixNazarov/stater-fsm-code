@@ -1,6 +1,6 @@
 import json
 from abc import ABC, abstractmethod
-from typing import Callable, TypeVar, Generic, Optional, List, Dict, Set
+from typing import Callable, TypeVar, Generic, Optional, List, Dict, Set, Any
 
 from pydantic import BaseModel, Field
 
@@ -54,7 +54,7 @@ class Transition(BaseModel, Generic[T, C]):
 class JsonSchema(BaseModel, Generic[T]):
     states: List[T]
     startState: T
-    transitions: List[Transition[T, Context]]
+    transitions: List[Transition[T, Any]]
 
     class Config:
         arbitrary_types_allowed = True
