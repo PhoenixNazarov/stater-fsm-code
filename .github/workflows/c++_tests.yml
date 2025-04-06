@@ -3,7 +3,7 @@ name: C++ Tests and Coverage
 on:
   push:
     paths:
-#      - 'projects/cPlusPlus/**'
+  #      - 'projects/cPlusPlus/**'
   pull_request:
     paths:
 #      - 'projects/cPlusPlus/**'
@@ -63,6 +63,9 @@ jobs:
           cmake --build build
 
       - name: Run tests
+        env:
+          LLVM_PROFILE_FILE:
+            ${{ matrix.compiler.cc == 'clang-16' || matrix.compiler.cc == 'clang-17' ? 'coverage-%p.profraw': '' }}
         run: |
           cd projects/cPlusPlus/build
           ctest --output-on-failure
@@ -77,8 +80,8 @@ jobs:
           elif [ "${{ matrix.compiler.cc }}" = "gcc-13" ]; then
           GCOV_EXEC=gcov-13
           elif [ "${{ matrix.compiler.cc }}" = "clang-16" ]; then
-          GCOV_EXEC="llvm-cov-16 gcov"
+          GCOV_EXEC=llvm-cov-16
           elif [ "${{ matrix.compiler.cc }}" = "clang-17" ]; then
-          GCOV_EXEC="llvm-cov-17 gcov"
+          GCOV_EXEC=llvm-cov-17
           fi
-          gcovr -r .. --exclude '.*gtest.*' --exclude '.*nlohmann.*' --gcov-executable $GCOV_EXEC --txt
+          gcovr -r .. --exclude '.*gtest.*' --exclude '.*nlohmann.*' --gcov-executable $GCOV_EXEC --txt --verbose
