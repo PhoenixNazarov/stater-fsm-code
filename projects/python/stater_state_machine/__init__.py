@@ -54,7 +54,7 @@ class Transition(BaseModel, Generic[T, C]):
 class JsonSchema(BaseModel, Generic[T]):
     states: List[T]
     startState: T
-    transitions: List[Transition[T, C]]
+    transitions: List[Transition[T, Context]]
 
     class Config:
         arbitrary_types_allowed = True
@@ -189,9 +189,10 @@ class StaterStateMachine(Generic[T, C]):
     def from_json(self, json_str: str, state_converter: Callable[[str], T]):
         if not self.__context_json_adapter:
             raise ValueError("ContextJsonAdapter is not set")
-        data = JsonState.parse_raw(json_str)
-        self.__state = state_converter(data.state)
-        self.__context = self.__context_json_adapter.from_json(data.context)
+        data: Optional[JsonState] = JsonState.parse_raw(json_str)
+        if data:
+            self.__state = state_converter(data.state)
+            self.__context = self.__context_json_adapter.from_json(data.context)
 
     def disable_events(self):
         self.__enable_events = False
