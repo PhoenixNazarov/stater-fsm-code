@@ -55,6 +55,7 @@ jobs:
             export CFLAGS="-fprofile-instr-generate -fcoverage-mapping"
             export CXXFLAGS="-fprofile-instr-generate -fcoverage-mapping"
             cmake -B build -S . -DCMAKE_C_COMPILER=${{ matrix.compiler.cc }} -DCMAKE_CXX_COMPILER=${{ matrix.compiler.cxx }} -DCMAKE_C_FLAGS="$CFLAGS" -DCMAKE_CXX_FLAGS="$CXXFLAGS"
+            cmake --build build
           else
             cmake --build build
           fi
