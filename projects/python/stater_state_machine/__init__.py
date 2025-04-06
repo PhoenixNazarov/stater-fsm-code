@@ -105,7 +105,7 @@ class StaterStateMachine(Generic[T, C]):
         self.__context_json_adapter = context_json_adapter
         self.__enable_events = True
 
-    def get_state(self) -> T | None:
+    def get_state(self) -> Optional[T]:
         return self.__state
 
     def get_context(self) -> C:

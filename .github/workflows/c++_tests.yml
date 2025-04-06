@@ -19,7 +19,7 @@ jobs:
           - { cc: gcc-13, cxx: g++-13 }
           - { cc: clang-16, cxx: clang++-16 }
           - { cc: clang-17, cxx: clang++-17 }
-      fail-fast: false  # Continue testing other configurations even if one fails
+      fail-fast: false
 
     steps:
       - name: Checkout repository
@@ -29,7 +29,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y lcov cmake
-          # Install specific compiler versions
           sudo apt-get install -y ${{ matrix.compiler.cc }} ${{ matrix.compiler.cxx }}
           if [ "${{ matrix.compiler.cc }}" = "clang-16" ]; then
             sudo apt-get install -y llvm-16
@@ -56,8 +55,8 @@ jobs:
             export CFLAGS="-fprofile-instr-generate -fcoverage-mapping"
             export CXXFLAGS="-fprofile-instr-generate -fcoverage-mapping"
           else
-          export CFLAGS=""
-          export CXXFLAGS=""
+            export CFLAGS=""
+            export CXXFLAGS=""
           fi
           cmake -B build -S . -DCMAKE_C_COMPILER=${{ matrix.compiler.cc }} -DCMAKE_CXX_COMPILER=${{ matrix.compiler.cxx }} -DCMAKE_C_FLAGS="$CFLAGS" -DCMAKE_CXX_FLAGS="$CXXFLAGS"
           cmake --build build
@@ -65,25 +64,26 @@ jobs:
       - name: Run tests
         run: |
           cd projects/cPlusPlus/build
-          if [ "${{ matrix.compiler.cc }}" = "clang-16" ] || [ "${{ matrix.compiler.cc }}" = "clang-17" ]; then
+          if [[ "${{ matrix.compiler.cc }}" == clang-* ]]; then
             export LLVM_PROFILE_FILE="coverage-%p.profraw"
           else
             export LLVM_PROFILE_FILE=""
           fi
           ctest --output-on-failure
 
-      - name: Generate and show detailed coverage in console
+      - name: Generate and show detailed coverage
         run: |
           cd projects/cPlusPlus/build
-          if [ "${{ matrix.compiler.cc }}" = "gcc-11" ]; then
-            GCOV_EXEC=gcov-11
-          elif [ "${{ matrix.compiler.cc }}" = "gcc-12" ]; then
-          GCOV_EXEC=gcov-12
-          elif [ "${{ matrix.compiler.cc }}" = "gcc-13" ]; then
-          GCOV_EXEC=gcov-13
-          elif [ "${{ matrix.compiler.cc }}" = "clang-16" ]; then
-          GCOV_EXEC=llvm-cov-16
-          elif [ "${{ matrix.compiler.cc }}" = "clang-17" ]; then
-          GCOV_EXEC=llvm-cov-17
+          if [[ "${{ matrix.compiler.cc }}" == clang-* ]]; then
+            llvm-profdata merge -sparse coverage-*.profraw -o coverage.profdata
+            llvm-cov report ./my_executable -instr-profile=coverage.profdata
+          else
+            if [ "${{ matrix.compiler.cc }}" = "gcc-11" ]; then
+              GCOV_EXEC=gcov-11
+            elif [ "${{ matrix.compiler.cc }}" = "gcc-12" ]; then
+              GCOV_EXEC=gcov-12
+            elif [ "${{ matrix.compiler.cc }}" = "gcc-13" ]; then
+              GCOV_EXEC=gcov-13
+            fi
+            gcovr -r .. --exclude '.*gtest.*' --exclude '.*nlohmann.*' --exclude-directories '.*CMakeFiles.*' --gcov-executable $GCOV_EXEC --verbose --txt
           fi
-          gcovr -r .. --exclude '.*gtest.*' --exclude '.*nlohmann.*' --gcov-executable $GCOV_EXEC --txt --verbose

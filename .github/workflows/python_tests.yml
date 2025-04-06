@@ -26,13 +26,13 @@ jobs:
           cd projects/python
           python -m pip install --upgrade pip
           pip install poetry
-          pip install mypy
           poetry install --no-root
+          poetry add --dev mypy
 
       - name: Run mypy
         run: |
           cd projects/python
-          mypy .
+          poetry run mypy .
 
   test:
     runs-on: ubuntu-latest
