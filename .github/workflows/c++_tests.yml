@@ -95,5 +95,5 @@ jobs:
             elif [ "${{ matrix.compiler.cc }}" = "gcc-13" ]; then
               GCOV_EXEC=gcov-13
             fi
-            gcovr -r .. --exclude '.*gtest.*' --exclude '.*nlohmann.*' --exclude-directories '.*CMakeFiles.*' --gcov-executable $GCOV_EXEC --txt
+            gcovr -r .. --exclude '.*gtest.*' --exclude '.*nlohmann.*' --gcov-executable $GCOV_EXEC --txt
           fi
