@@ -25,7 +25,6 @@ add_library(stater_state_machine
 target_link_libraries(stater_state_machine PRIVATE nlohmann_json::nlohmann_json)
 
 add_executable(fsm_tests tests/test_door.cpp)
-add_executable(fsm_tests tests/test_door2.cpp)
 target_include_directories(fsm_tests PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(fsm_tests PRIVATE stater_state_machine nlohmann_json::nlohmann_json gtest)
 
