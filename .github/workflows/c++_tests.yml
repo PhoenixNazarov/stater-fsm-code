@@ -17,7 +17,6 @@ jobs:
           - { cc: gcc-11, cxx: g++-11 }
           - { cc: gcc-12, cxx: g++-12 }
           - { cc: gcc-13, cxx: g++-13 }
-          - { cc: clang-15, cxx: clang++-15 }
           - { cc: clang-16, cxx: clang++-16 }
           - { cc: clang-17, cxx: clang++-17 }
       fail-fast: false  # Continue testing other configurations even if one fails
@@ -29,9 +28,15 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y lcov gcovr cmake
+          sudo apt-get install -y lcov cmake
           # Install specific compiler versions
           sudo apt-get install -y ${{ matrix.compiler.cc }} ${{ matrix.compiler.cxx }}
+          if [ "${{ matrix.compiler.cc }}" = "clang-16" ]; then
+            sudo apt-get install -y llvm-16
+          elif [ "${{ matrix.compiler.cc }}" = "clang-17" ]; then
+            sudo apt-get install -y llvm-17
+          fi
+          pip install gcovr
 
       - name: Configure CMake
         env:
@@ -57,4 +62,15 @@ jobs:
       - name: Generate and show detailed coverage in console
         run: |
           cd projects/cPlusPlus/build
-          gcovr -r .. --exclude '.*gtest.*' --exclude '.*nlohmann.*' --txt
+          if [ "${{ matrix.compiler.cc }}" = "gcc-11" ]; then
+            GCOV_EXEC=gcov-11
+          elif [ "${{ matrix.compiler.cc }}" = "gcc-12" ]; then
+          GCOV_EXEC=gcov-12
+          elif [ "${{ matrix.compiler.cc }}" = "gcc-13" ]; then
+          GCOV_EXEC=gcov-13
+          elif [ "${{ matrix.compiler.cc }}" = "clang-16" ]; then
+          GCOV_EXEC=llvm-cov-16
+          elif [ "${{ matrix.compiler.cc }}" = "clang-17" ]; then
+          GCOV_EXEC=llvm-cov-17
+          fi
+          gcovr -r .. --exclude '.*gtest.*' --exclude '.*nlohmann.*' --gcov-executable $GCOV_EXEC --txt
