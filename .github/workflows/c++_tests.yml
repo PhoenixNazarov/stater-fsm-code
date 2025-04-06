@@ -63,11 +63,13 @@ jobs:
           cmake --build build
 
       - name: Run tests
-        env:
-          LLVM_PROFILE_FILE:
-            ${{ matrix.compiler.cc == 'clang-16' || matrix.compiler.cc == 'clang-17' ? 'coverage-%p.profraw': '' }}
         run: |
           cd projects/cPlusPlus/build
+          if [ "${{ matrix.compiler.cc }}" = "clang-16" ] || [ "${{ matrix.compiler.cc }}" = "clang-17" ]; then
+            export LLVM_PROFILE_FILE="coverage-%p.profraw"
+          else
+            export LLVM_PROFILE_FILE=""
+          fi
           ctest --output-on-failure
 
       - name: Generate and show detailed coverage in console

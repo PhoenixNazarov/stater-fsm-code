@@ -39,8 +39,8 @@ class ContextJsonAdapter(Generic[C], ABC):
 Event = Callable[[C], None]
 NameEvent = Callable[[str, C], None]
 StateEvent = Callable[[T, C], None]
-TransitionMiddleware = Callable[[C, Event], None]
-TransitionNameMiddleware = Callable[[str, C, NameEvent], None]
+TransitionMiddleware = Callable[[C, Event[C]], None]
+TransitionNameMiddleware = Callable[[str, C, NameEvent[C]], None]
 
 
 class Transition(BaseModel, Generic[T, C]):
@@ -72,13 +72,13 @@ class StaterStateMachine(Generic[T, C]):
             context: C,
             start_state: Optional[T] = None,
             states: Optional[Set[T]] = None,
-            transition_middlewares: Optional[Dict[str, List[Callable[[C, Callable], None]]]] = None,
-            transition_all_middlewares: Optional[List[Callable[[str, C, Callable], None]]] = None,
+            transition_middlewares: Optional[Dict[str, List[TransitionMiddleware[C]]]] = None,
+            transition_all_middlewares: Optional[List[TransitionNameMiddleware[C]]] = None,
             transition_callbacks: Optional[Dict[str, List[Event[C]]]] = None,
             transition_all_callbacks: Optional[List[NameEvent[C]]] = None,
             state_callbacks: Optional[Dict[T, List[Event[C]]]] = None,
             state_all_callbacks: Optional[List[StateEvent[T, C]]] = None,
-            context_json_adapter: Optional['ContextJsonAdapter[C]'] = None,
+            context_json_adapter: Optional[ContextJsonAdapter[C]] = None,
             state: Optional[T] = None,
     ):
         self.__transitions = transitions
@@ -92,7 +92,7 @@ class StaterStateMachine(Generic[T, C]):
         self.__start_state = start_state or self.__transitions[0].start
         self.__state = state or start_state
         self.__context = context
-        self.__transitions_grouped_start = {t.start: [] for t in transitions}
+        self.__transitions_grouped_start: Dict[T, list[Transition[T, C]]] = {t.start: [] for t in transitions}
         for t in transitions:
             self.__transitions_grouped_start[t.start].append(t)
         self.__transitions_by_name = {t.name: t for t in transitions}
@@ -105,7 +105,7 @@ class StaterStateMachine(Generic[T, C]):
         self.__context_json_adapter = context_json_adapter
         self.__enable_events = True
 
-    def get_state(self) -> T:
+    def get_state(self) -> T | None:
         return self.__state
 
     def get_context(self) -> C:
@@ -153,12 +153,13 @@ class StaterStateMachine(Generic[T, C]):
         if transition.event:
             transition.event(self.__context)
 
-        for callback in self.__transition_all_callbacks:
-            callback(name, self.__context)
+        for name_callback in self.__transition_all_callbacks:
+            name_callback(name, self.__context)
         for callback in self.__transition_callbacks.get(name, []):
             callback(self.__context)
-        for callback in self.__state_all_callbacks:
-            callback(self.__state, self.__context)
+        if self.__state_all_callbacks:
+            for state_callback in self.__state_all_callbacks:
+                state_callback(self.__state, self.__context)
         for callback in self.__state_callbacks.get(self.__state, []):
             callback(self.__context)
 
@@ -285,11 +286,11 @@ class StaterStateMachineBuilder(Generic[T, C]):
         self.__transitions[name].event = event
         return self
 
-    def transition_middleware(self, name: str, middleware: Callable[[C, Callable], None]):
+    def transition_middleware(self, name: str, middleware: TransitionMiddleware[C]):
         self.__transition_middlewares.setdefault(name, []).append(middleware)
         return self
 
-    def transition_all_middleware(self, middleware: Callable[[str, C, Callable], None]):
+    def transition_all_middleware(self, middleware: TransitionNameMiddleware[C]):
         self.__transition_all_middlewares.append(middleware)
         return self
 
@@ -330,11 +331,11 @@ class StaterStateMachineBuilder(Generic[T, C]):
         self.set_start_state(state_converter(data['startState']))
         return self
 
-    def set_factory(self, factory: Callable[..., 'StaterStateMachine[T, C]']):
+    def set_factory(self, factory: StateMachineFactory[T, C]):
         self.__factory = factory
         return self
 
-    def set_context_json_adapter(self, context_json_adapter: 'ContextJsonAdapter[C]'):
+    def set_context_json_adapter(self, context_json_adapter: ContextJsonAdapter[C]):
         self.__context_json_adapter = context_json_adapter
         return self
 
