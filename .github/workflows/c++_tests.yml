@@ -77,8 +77,8 @@ jobs:
           elif [ "${{ matrix.compiler.cc }}" = "gcc-13" ]; then
           GCOV_EXEC=gcov-13
           elif [ "${{ matrix.compiler.cc }}" = "clang-16" ]; then
-          GCOV_EXEC=llvm-cov-16
+          GCOV_EXEC="llvm-cov-16 gcov"
           elif [ "${{ matrix.compiler.cc }}" = "clang-17" ]; then
-          GCOV_EXEC=llvm-cov-17
+          GCOV_EXEC="llvm-cov-17 gcov"
           fi
           gcovr -r .. --exclude '.*gtest.*' --exclude '.*nlohmann.*' --gcov-executable $GCOV_EXEC --txt
