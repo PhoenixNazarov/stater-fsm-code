@@ -3,10 +3,10 @@ name: Python Tests
 on:
   push:
     paths:
-#      - 'projects/python/**'
+      - 'projects/python/**'
   pull_request:
     paths:
-#      - 'projects/python/**'
+      - 'projects/python/**'
 
 jobs:
   mypy-test:
