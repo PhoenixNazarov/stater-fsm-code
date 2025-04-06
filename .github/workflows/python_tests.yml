@@ -23,6 +23,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          cd projects/python
           python -m pip install --upgrade pip
           pip install poetry
           pip install mypy
@@ -30,6 +31,7 @@ jobs:
 
       - name: Run mypy
         run: |
+          cd projects/python
           mypy .
 
   test:
