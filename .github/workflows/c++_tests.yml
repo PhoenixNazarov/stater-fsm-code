@@ -81,7 +81,7 @@ jobs:
             llvm-profdata-17 merge -sparse coverage-*.profraw -o coverage.profdata
             llvm-cov-17 report ./fsm_tests -instr-profile=coverage.profdata --ignore-filename-regex=".*(gtest|nlohmann|CMakeFiles).*"
           else
-            elif [ "${{ matrix.compiler.cc }}" = "gcc-11" ]; then
+            if [ "${{ matrix.compiler.cc }}" = "gcc-11" ]; then
               GCOV_EXEC=gcov-11
             elif [ "${{ matrix.compiler.cc }}" = "gcc-12" ]; then
               GCOV_EXEC=gcov-12
