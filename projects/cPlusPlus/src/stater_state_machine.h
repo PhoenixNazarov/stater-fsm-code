@@ -4,12 +4,14 @@
 
 #pragma once
 
+#include <algorithm>
 #include <iostream>
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
 #include <functional>
 #include <optional>
+#include <regex>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
@@ -20,6 +22,8 @@ public:
 };
 
 class empty_context : public context {
+public:
+    empty_context() = default;
 };
 
 template<typename C>
@@ -29,7 +33,7 @@ public:
 
     virtual std::string to_json(C *context) const = 0;
 
-    virtual C* from_json(const std::string &json) const = 0;
+    virtual C *from_json(const std::string &json) const = 0;
 };
 
 template<typename C>
@@ -48,7 +52,7 @@ template<typename C>
 using transition_name_middleware = std::function<void(const std::string &, C *, name_event<C>)>;
 
 template<typename T, typename C>
-struct Transition {
+struct transition_t {
     std::string name;
     T start;
     T end;
@@ -60,7 +64,7 @@ template<typename T>
 struct json_schema {
     std::vector<T> states;
     T start_state;
-    std::vector<Transition<T, context> > transitions;
+    std::vector<transition_t<T, context> > transitions;
 };
 
 template<typename T>
@@ -71,10 +75,10 @@ struct json_state {
 
 template<typename T, typename C>
 class stater_state_machine {
-    std::vector<Transition<T, C> > transitions;
+    std::vector<transition_t<T, C> > transitions;
     std::unordered_set<T> states;
-    std::unordered_map<T, std::vector<Transition<T, C> > > transitions_grouped_start;
-    std::unordered_map<std::string, Transition<T, C> > transitions_by_name;
+    std::unordered_map<T, std::vector<transition_t<T, C> > > transitions_grouped_start;
+    std::unordered_map<std::string, transition_t<T, C> > transitions_by_name;
     std::unordered_map<std::string, std::vector<::transition_middleware<C> > > transition_middlewares;
     std::vector<transition_name_middleware<C> > transition_all_middlewares;
     std::unordered_map<std::string, std::vector<event<C> > > transition_callbacks;
@@ -91,7 +95,7 @@ public:
 
     stater_state_machine() = default;
 
-    stater_state_machine(std::vector<Transition<T, C> > trans, C *ctx, T start_state): transitions(std::move(trans)),
+    stater_state_machine(std::vector<transition_t<T, C> > trans, C *ctx, T start_state): transitions(trans),
         current_state(start_state), context(ctx) {
         for (const auto &t: transitions) {
             states.insert(t.start);
@@ -102,7 +106,7 @@ public:
     }
 
     stater_state_machine(
-        const std::vector<Transition<T, C> > &transitions,
+        const std::vector<transition_t<T, C> > &transitions,
         C *context,
         T startState,
         const std::unordered_set<T> &states,
@@ -135,8 +139,8 @@ public:
             }
         }
 
-        this->transitions_grouped_start = std::unordered_map<T, std::vector<Transition<T, C> > >();
-        this->transitions_by_name = std::unordered_map<std::string, Transition<T, C> >();
+        this->transitions_grouped_start = std::unordered_map<T, std::vector<transition_t<T, C> > >();
+        this->transitions_by_name = std::unordered_map<std::string, transition_t<T, C> >();
 
         for (const auto &el: transitions) {
             this->transitions_by_name[el.name] = el;
@@ -163,18 +167,14 @@ public:
         if (it == transitions_by_name.end()) {
             throw std::runtime_error("Transition not found: " + name);
         }
-        const Transition<T, C> &t = it->second;
+        const transition_t<T, C> &t = it->second;
 
         if (current_state != t.start) {
             throw std::runtime_error("Invalid transition: incorrect start state");
         }
 
-        if (t.condition && !t.condition.value()(context)) {
-            throw std::runtime_error("Condition failed for transition: " + name);
-        }
-
         int index = 0, index2 = 0;
-        auto transitionMiddleware = transition_middlewares.find(name);
+        auto transition_middleware = transition_middlewares.find(name);
 
         auto conditionHandler = [&]() {
             if (t.condition && !t.condition.value()(context)) {
@@ -183,8 +183,9 @@ public:
         };
 
         std::function<void(C *)> internalNext = [&](C *ctx) {
-            if (transitionMiddleware != transition_middlewares.end() && index2 < transitionMiddleware->second.size()) {
-                transitionMiddleware->second[index2++](ctx, internalNext);
+            if (transition_middleware != transition_middlewares.end() && index2 < transition_middleware->second.
+                size()) {
+                transition_middleware->second[index2++](ctx, internalNext);
             } else {
                 conditionHandler();
             }
@@ -240,10 +241,17 @@ public:
         json j;
         std::vector<T> states_v(states.begin(), states.end());
 
-        std::sort(states_v.begin(), states_v.end(), [](T a, T b) {
-            json state_a_json = a;
-            json state_b_json = b;
-            return state_a_json.dump().compare(state_b_json.dump()) < 0;
+        const auto &coll = std::use_facet<std::collate<char> >(std::locale());
+
+        std::sort(states_v.begin(), states_v.end(), [&coll](T a, T b) {
+            const json state_a_json = a;
+            const json state_b_json = b;
+            std::string sa = state_a_json.dump();
+            std::string sb = state_b_json.dump();
+            std::ranges::replace(sa, '_', '\x01');
+            std::ranges::replace(sb, '_', '\x01');
+            return coll.compare(sa.data(), sa.data() + sa.size(),
+                                sb.data(), sb.data() + sb.size()) < 0;
         });
         j["states"] = states_v;
         j["startState"] = current_state;
@@ -283,7 +291,7 @@ public:
 
 template<typename T, typename C>
 using state_machine_factory = std::function<std::unique_ptr<stater_state_machine<T, C> >(
-    std::vector<Transition<T, C> >,
+    std::vector<transition_t<T, C> >,
     C *,
     T,
     std::unordered_set<T>,
@@ -300,7 +308,7 @@ template<typename T, typename C>
 class base_fsm : public stater_state_machine<T, C> {
 public:
     base_fsm(
-        const std::vector<Transition<T, C> > &transitions,
+        const std::vector<transition_t<T, C> > &transitions,
         C *context,
         T startState,
         const std::unordered_set<T> &states,
@@ -324,7 +332,8 @@ public:
 
 template<typename T, typename C>
 class stater_state_machine_builder {
-    std::map<std::string, Transition<T, C> > transitions;
+    std::map<std::string, transition_t<T, C> > transitions;
+    std::vector<std::string> transitions_v;
     std::unordered_set<T> states;
     T startState;
     C *context;
@@ -336,7 +345,7 @@ class stater_state_machine_builder {
     std::vector<state_event<T, C> > state_all_callbacks;
 
     state_machine_factory<T, C> factory = [](
-        const std::vector<Transition<T, C> > &transitions,
+        const std::vector<transition_t<T, C> > &transitions,
         C *context,
         T startState,
         const std::unordered_set<T> &states,
@@ -369,7 +378,12 @@ public:
     ) {
         add_state(start);
         add_state(end);
-        transitions[name] = Transition<T, C>(name, start, end, condition, event);
+        if (transitions.contains(name)) {
+            std::erase(transitions_v, name);
+        } else {
+            transitions_v.push_back(name);
+        }
+        transitions[name] = transition_t<T, C>(name, start, end, condition, event);
         return *this;
     }
 
@@ -461,9 +475,9 @@ public:
     }
 
     std::unique_ptr<stater_state_machine<T, C> > build() {
-        std::vector<Transition<T, C> > values;
-        for (const auto &pair: transitions) {
-            values.push_back(pair.second);
+        std::vector<transition_t<T, C> > values;
+        for (const auto &name: transitions_v) {
+            values.push_back(transitions[name]);
         }
         return factory(
             values,

@@ -32,11 +32,9 @@ inline void from_json(const nlohmann::json &j, states &e) {
 }
 
 class door_fsm_context final : context {
-    int degree_of_opening;
-
 public:
-    door_fsm_context() : degree_of_opening(100) {
-    }
+    int degree_of_opening = 100;
+    door_fsm_context() = default;
 
     explicit door_fsm_context(const int degree_of_opening) : degree_of_opening(degree_of_opening) {
     }
@@ -56,23 +54,23 @@ class types_door_state_machine : public stater_state_machine<states, door_fsm_co
 public:
     types_door_state_machine() : stater_state_machine(
         {
-            Transition<::states, door_fsm_context>("preOpen", states::CLOSE, states::AJAR,
+            transition_t<::states, door_fsm_context>("preOpen", states::CLOSE, states::AJAR,
                                                    [](door_fsm_context *ctx) { return true; },
                                                    [](door_fsm_context *ctx) { ctx->set_degree_of_opening(1); }),
-            Transition<::states, door_fsm_context>("preClose", states::OPEN, states::AJAR,
+            transition_t<::states, door_fsm_context>("preClose", states::OPEN, states::AJAR,
                                                    [](door_fsm_context *ctx) { return true; },
                                                    [](door_fsm_context *ctx) { ctx->set_degree_of_opening(99); }),
-            Transition<::states, door_fsm_context>("open", states::AJAR, states::OPEN,
+            transition_t<::states, door_fsm_context>("open", states::AJAR, states::OPEN,
                                                    [](door_fsm_context *ctx) {
                                                        return ctx->get_degree_of_opening() >= 99;
                                                    },
                                                    [](door_fsm_context *ctx) { ctx->set_degree_of_opening(100); }),
-            Transition<::states, door_fsm_context>("close", states::AJAR, states::CLOSE,
+            transition_t<::states, door_fsm_context>("close", states::AJAR, states::CLOSE,
                                                    [](door_fsm_context *ctx) {
                                                        return ctx->get_degree_of_opening() <= 1;
                                                    },
                                                    [](door_fsm_context *ctx) { ctx->set_degree_of_opening(0); }),
-            Transition<::states, door_fsm_context>("ajarPlus", states::AJAR, states::AJAR,
+            transition_t<::states, door_fsm_context>("ajarPlus", states::AJAR, states::AJAR,
                                                    [](door_fsm_context *ctx) {
                                                        return ctx->get_degree_of_opening() >= 1 && ctx->
                                                               get_degree_of_opening() <= 98;
@@ -80,7 +78,7 @@ public:
                                                    [](door_fsm_context *ctx) {
                                                        ctx->set_degree_of_opening(ctx->get_degree_of_opening() + 1);
                                                    }),
-            Transition<::states, door_fsm_context>("ajarMinus", states::AJAR, states::AJAR,
+            transition_t<::states, door_fsm_context>("ajarMinus", states::AJAR, states::AJAR,
                                                    [](door_fsm_context *ctx) {
                                                        return ctx->get_degree_of_opening() >= 2 && ctx->
                                                               get_degree_of_opening() <= 99;
@@ -103,9 +101,9 @@ public:
     }
 
     types_door_state_machine(
-        const std::vector<Transition<::states, door_fsm_context> > &transitions,
+        const std::vector<transition_t<::states, door_fsm_context> > &transitions,
         door_fsm_context *context,
-        ::states startState,
+        const ::states start_state,
         const std::unordered_set<::states> &states,
         const std::unordered_map<std::string, std::vector<transition_middleware<door_fsm_context> > > &
         transition_middlewares,
@@ -115,7 +113,7 @@ public:
         const std::unordered_map<::states, std::vector<event<door_fsm_context> > > &state_callbacks,
         const std::vector<state_event<::states, door_fsm_context> > &state_all_callbacks,
         std::shared_ptr<::context_json_adapter<door_fsm_context> > context_json_adapter_
-    ): stater_state_machine(transitions, context, startState, states, transition_middlewares,
+    ): stater_state_machine(transitions, context, start_state, states, transition_middlewares,
                             transition_all_middlewares, transition_callbacks, transition_all_callbacks, state_callbacks,
                             state_all_callbacks, std::move(context_json_adapter_)) {
     }
@@ -256,7 +254,6 @@ stater_state_machine_builder<states, door_fsm_context> structure_build() {
             .add_transition("ajarMinus", states::AJAR, states::AJAR);
 }
 
-// Строим события и условия для FSM
 stater_state_machine_builder<states, door_fsm_context> events_build(
     stater_state_machine_builder<states, door_fsm_context> &builder) {
     return builder
@@ -295,7 +292,7 @@ stater_state_machine_builder<states, door_fsm_context> events_build(
 TEST(state_machine_test, TestBuilder2) {
     door_fsm_context context;
     auto fsm = structure_build();
-    auto door_fsm = events_build(fsm)
+    const auto door_fsm = events_build(fsm)
             .set_context(&context)
             .set_start_state(states::OPEN)
             .build();
@@ -304,7 +301,7 @@ TEST(state_machine_test, TestBuilder2) {
 }
 
 state_machine_factory<states, door_fsm_context> typed_door_factory = [](
-    const std::vector<Transition<states, door_fsm_context> > &transitions,
+    const std::vector<transition_t<states, door_fsm_context> > &transitions,
     door_fsm_context *context,
     states startState,
     const std::unordered_set<states> &states,
@@ -387,7 +384,7 @@ TEST(state_machine_test, TestStringGeneric) {
 
     const auto json_schema = door_fsm->to_json_schema();
 
-    auto builder = stater_state_machine_builder<std::string, door_fsm_context>()
+    const auto builder = stater_state_machine_builder<std::string, door_fsm_context>()
             .from_json_schema(json_schema)
             .set_context(&context)
             .build();
