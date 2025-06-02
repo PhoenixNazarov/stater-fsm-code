@@ -1,0 +1,37 @@
+{
+  "states": [
+    "CHECKED_AUTO",
+    "CHECKED_SHIP",
+    "CHECKED_TRAIN",
+    "INITIAL",
+    "VALID"
+  ],
+  "startState": "INITIAL",
+  "transitions": [
+    {
+      "name": "checking_ship",
+      "start": "INITIAL",
+      "end": "CHECKED_SHIP"
+    },
+    {
+      "name": "checking_train",
+      "start": "CHECKED_SHIP",
+      "end": "CHECKED_TRAIN"
+    },
+    {
+      "name": "train_checking_auto",
+      "start": "CHECKED_TRAIN",
+      "end": "CHECKED_AUTO"
+    },
+    {
+      "name": "ship_checking_auto",
+      "start": "CHECKED_SHIP",
+      "end": "CHECKED_AUTO"
+    },
+    {
+      "name": "collect",
+      "start": "CHECKED_AUTO",
+      "end": "VALID"
+    }
+  ]
+}
