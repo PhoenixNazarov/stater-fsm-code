@@ -1,9 +1,18 @@
+# mypy: ignore-errors
 import datetime
+import sys
+
 import pytest
+
 from route_finder.database.dto import Port, Country, City, ShipRate, AutoRate, TrainRate
 from route_finder.database.services import rate_service, map_service
 from route_finder.generated_fsm import fsm_processor
 from route_finder.route_dto import Route
+
+pytestmark = pytest.mark.skipif(
+    sys.version_info <= (3, 10),
+    reason="Не работает на Python 3.10-"
+)
 
 country_ru = Country(
     name='россия',

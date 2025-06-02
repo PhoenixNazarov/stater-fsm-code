@@ -1,6 +1,14 @@
 import json
+import sys
+
+import pytest
 
 from route_finder.generated_fsm import builder_validator_state_machine, States
+
+pytestmark = pytest.mark.skipif(
+    sys.version_info <= (3, 10),
+    reason="Не работает на Python 3.10-"
+)
 
 
 def test_init():

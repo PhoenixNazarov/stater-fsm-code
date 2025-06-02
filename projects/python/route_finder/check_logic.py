@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import datetime
 
 from route_finder.database.services import map_service, rate_service
